@@ -6,18 +6,34 @@ console.log("[Next] build mode", mode);
 const disableChunk = !!process.env.DISABLE_CHUNK || mode === "export";
 console.log("[Next] build with chunk: ", !disableChunk);
 
+// const cspHeader = `
+//     default-src * 'self';
+//     frame-src *;
+//     script-src * 'self' 'unsafe-eval' 'unsafe-inline';
+//     worker-src * 'self';
+//     connect-src * 'self' blob: data: https: http:;
+//     style-src * 'self' 'unsafe-inline';
+//     img-src * 'self' blob: data: https:;
+//     font-src * 'self';
+//     object-src *'none';
+//     base-uri 'self';
+//     form-action 'self';
+//     frame-ancestors *;
+//     upgrade-insecure-requests;
+// `;
 const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    worker-src 'self';
-    connect-src 'self' blob: data: https: http:;
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https:;
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
+    default-src * blob: data: 'unsafe-inline' 'unsafe-eval';
+    script-src * blob: data: 'unsafe-inline' 'unsafe-eval';
+    style-src * blob: data: 'unsafe-inline';
+    img-src * blob: data:;
+    font-src * blob: data:;
+    frame-src * blob: data:;  
+    worker-src * blob: data:;
+    object-src *;
+    media-src *;
+    connect-src *;
+    form-action *;
+    frame-ancestors *;  
     upgrade-insecure-requests;
 `;
 
@@ -54,22 +70,54 @@ const nextConfig = {
   },
 };
 
+// const CorsHeaders = [
+//   { key: "Access-Control-Allow-Credentials", value: "true" },
+//   { key: "Access-Control-Allow-Origin", value: "*" },
+//   {
+//     key: "Access-Control-Allow-Methods",
+//     value: "*",
+//   },
+//   {
+//     key: "Access-Control-Allow-Headers",
+//     value: "*",
+//   },
+//   {
+//     key: "Access-Control-Max-Age",
+//     value: "86400",
+//   },
+// ];
 const CorsHeaders = [
   { key: "Access-Control-Allow-Credentials", value: "true" },
-  { key: "Access-Control-Allow-Origin", value: "*" },
-  {
-    key: "Access-Control-Allow-Methods",
-    value: "*",
-  },
-  {
-    key: "Access-Control-Allow-Headers",
-    value: "*",
-  },
-  {
-    key: "Access-Control-Max-Age",
-    value: "86400",
-  },
+  { key: "Access-Control-Allow-Origin", value: "*" },  // 允许任何域名访问
+  { key: "Access-Control-Allow-Methods", value: "*" }, // 允许所有请求方法
+  { key: "Access-Control-Allow-Headers", value: "*" }, // 允许所有请求头
+  { key: "Access-Control-Max-Age", value: "86400" },
+  { key: "Vary", value: "Origin" },
 ];
+
+// if (mode !== "export") {
+//   nextConfig.headers = async () => {
+//     return [
+//       {
+//         source: "/api/:path*",
+//         headers: CorsHeaders,
+//       },
+//       {
+//         source: "/(.*)",
+//         headers: [
+//           {
+//             key: "Content-Security-Policy",
+//             value: cspHeader.replace(/\n/g, ""),
+//           },
+//           {
+//             key: "Content-Security-Policy-Report-Only",
+//             value: cspHeader.replace(/\n/g, ""),
+//           },
+//         ],
+//       },
+//     ];
+//   };
+// }
 
 if (mode !== "export") {
   nextConfig.headers = async () => {
@@ -85,10 +133,7 @@ if (mode !== "export") {
             key: "Content-Security-Policy",
             value: cspHeader.replace(/\n/g, ""),
           },
-          {
-            key: "Content-Security-Policy-Report-Only",
-            value: cspHeader.replace(/\n/g, ""),
-          },
+          
         ],
       },
     ];

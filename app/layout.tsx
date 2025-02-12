@@ -24,20 +24,35 @@ export const metadata: Metadata = {
   },
 };
 
+// const cspHeader = `
+//     default-src 'self';
+//     script-src 'self' 'unsafe-eval' 'unsafe-inline';
+//     worker-src 'self';
+//     connect-src 'self' blob: data: https: http:;
+//     style-src 'self' 'unsafe-inline';
+//     img-src 'self' blob: data: https:;
+//     font-src 'self';
+//     object-src 'none';
+//     base-uri 'self';
+//     form-action 'self';
+//     frame-ancestors 'none';
+//     upgrade-insecure-requests;
+// `;
 const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    worker-src 'self';
-    connect-src 'self' blob: data: https: http:;
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https:;
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-`;
+      default-src * blob: data: 'unsafe-inline' 'unsafe-eval';
+      script-src * blob: data: 'unsafe-inline' 'unsafe-eval';
+      style-src * blob: data: 'unsafe-inline';
+      img-src * blob: data:;
+      font-src * blob: data:;
+      frame-src * blob: data:;  
+      worker-src * blob: data:;
+      object-src *;
+      media-src *;
+      connect-src *;
+      form-action *;
+      frame-ancestors *;  
+      upgrade-insecure-requests;
+  `;
 
 export default function RootLayout({
   children,
