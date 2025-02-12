@@ -1938,10 +1938,10 @@
     "@webassemblyjs/ast" "1.12.1"
     "@xtuc/long" "4.2.2"
 
-"@webgpu/types@^0.1.42":
-  version "0.1.44"
-  resolved "https://registry.yarnpkg.com/@webgpu/types/-/types-0.1.44.tgz#1b264c0bfcb298df59d0943dad8ef02b4ff98d14"
-  integrity sha512-JDpYJN5E/asw84LTYhKyvPpxGnD+bAKPtpW9Ilurf7cZpxaTbxkQcGwOd7jgB9BPBrTYQ+32ufo4HiuomTjHNQ==
+"@webgpu/types@^0.1.54":
+  version "0.1.54"
+  resolved "https://registry.yarnpkg.com/@webgpu/types/-/types-0.1.54.tgz#0e692514314d910da56f43e17f5fff9bbd153607"
+  integrity sha512-81oaalC8LFrXjhsczomEQ0u3jG+TqE6V9QHLA8GNZq/Rnot0KDugu3LhSYSlie8tSdooAN1Hov05asrUUp9qgg==
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
