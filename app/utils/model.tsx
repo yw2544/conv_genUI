@@ -3,6 +3,7 @@ import MetaIcon from "@/app/icons/meta.svg";
 import MicrosoftIcon from "@/app/icons/microsoft.svg";
 import MistralIcon from "@/app/icons/mistral.svg";
 import GoogleIcon from "@/app/icons/google.svg";
+import OpenAIIcon from "@/app/icons/openai.svg";
 import StablelmIcon from "@/app/icons/stablelm.svg";
 import DeepSeekIcon from "@/app/icons/deepseek.svg";
 import { ModelRecord } from "../client/api";
@@ -89,5 +90,5 @@ export const modelDetailsList: ModelDetails[] = [
   { family: ModelFamily.STABLE_LM, name: "StableLM", icon: StablelmIcon },
   { family: ModelFamily.REDPAJAMA, name: "RedPajama", icon: Shirt },
   { family: ModelFamily.WIZARD_MATH, name: "Wizard Math", icon: WandSparkles },
-  { family: ModelFamily.OPENAI, name: "openai", icon: GoogleIcon },
+  { family: ModelFamily.OPENAI, name: "openai", icon: OpenAIIcon },
 ];
