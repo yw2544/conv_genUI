@@ -847,6 +847,8 @@ function _Chat() {
     session.messages.at(0)?.content !== BOT_HELLO.content
   ) {
     const copiedHello = Object.assign({}, BOT_HELLO);
+    // const systemPrompt = Object.assign({}, Function_system_prompt);
+    // context.push(systemPrompt);
     context.push(copiedHello);
   }
 
@@ -1294,7 +1296,7 @@ function _Chat() {
                       defaultShow={i >= messages.length - 6}
                     />
                     {}
-                    {!isUser && (
+                    {message.showMap && (
                       // <iframe
                       //   src="https://example.com"
                       //   width="100%"

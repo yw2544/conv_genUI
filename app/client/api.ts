@@ -73,9 +73,9 @@ export async function fetchOpenAI(
   const data = await response.json();
   console.log("✅ API Response:", data);
   return data;
-  const reply = data.choices?.[0]?.message?.content || "No response received";
-  console.log("✅ API Response:", reply);
-  return reply;
+  // const reply = data.choices?.[0]?.message?.content || "No response received";
+  // console.log("✅ API Response:", reply);
+  // return reply;
 }
 
 export interface LLMUsage {

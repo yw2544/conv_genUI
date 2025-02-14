@@ -25,6 +25,7 @@ import { LogLevel } from "@mlc-ai/web-llm";
 import { fixMessage } from "../utils";
 import { OpenAI_Api } from "./openai";
 import { DEFAULT_MODELS } from "../constant";
+import { config } from "process";
 
 const KEEP_ALIVE_INTERVAL = 5_000;
 
@@ -256,4 +257,20 @@ export class WebLLMApi implements LLMApi {
   async models() {
     return DEFAULT_MODELS;
   }
+
+  // async shouldShowMap(userInput: string): Promise<boolean> {
+  //   const response = await this.callAnotherLLM(userInput);
+  //   return response.includes("show map");
+  // }
+
+  // private async callAnotherLLM(input: string): Promise<string> {
+  //    const msg = await this.openai.chat({
+  //      messages: [{ role: "user", content: "Your task is to analyze each user message and determine whether it requires the use of a map to assist in providing an answer. If the message indicates a need for a map, respond with 'show map'. If a map is not necessary, respond with 'no'. Your responses should be concise and strictly limited to either 'show map' or 'no'." },
+  //        { role: "user", content: input },
+  //      ],
+  //      config: LLMApi
+  //    });
+  //    log.info(msg);
+  //    return msg.content[0].type;
+  // }
 }

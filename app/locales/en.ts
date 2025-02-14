@@ -276,6 +276,8 @@ const en = {
         "Please generate a four to five word title summarizing our conversation without any lead-in, punctuation, quotation marks, periods, symbols, bold text, or additional text. Remove enclosing quotation marks.",
       Summarize:
         "Summarize the discussion briefly in 200 words or less to use as a prompt for future context.",
+      Function_hint:
+        "Plz analyze each user message and determine whether it requires the use of a map to assist in providing an answer. If the message indicates a need for a map, respond with 'show map'. If a map is not necessary, respond with 'no'. Your responses should be concise and strictly limited to either 'show map' or 'no'.",
     },
   },
   Copy: {
