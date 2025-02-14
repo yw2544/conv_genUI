@@ -94,9 +94,14 @@ const DEFAULT_MODEL_CONFIG: ModelConfig = {
   frequency_penalty: 0,
 
   // Use recommended config to overwrite above parameters
-  ...DEFAULT_MODELS.find((m) => m.name === DEFAULT_MODEL)!.recommended_config,
-
-  mlc_endpoint: "",
+  mlc_endpoint: DEFAULT_MODEL.startsWith("gpt") ? "" : "http://localhost:8080",
+  ...(DEFAULT_MODELS.find((m) => m.name === DEFAULT_MODEL)
+    ?.recommended_config || {
+    temperature: 0.7,
+    presence_penalty: 0,
+    frequency_penalty: 0,
+    top_p: 1,
+  }),
 };
 
 export const DEFAULT_CONFIG: ConfigType = {

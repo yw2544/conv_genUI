@@ -77,9 +77,46 @@ export enum ModelFamily {
   STABLE_LM = "stablelm",
   REDPAJAMA = "redpajama",
   DEEPSEEK = "DeepSeek",
+  OPENAI = "openai",
 }
 
 const DEFAULT_MODEL_BASES: ModelRecord[] = [
+  {
+    name: "gpt-4o",
+    display_name: "GPT-4o",
+    provider: "OpenAI",
+    family: ModelFamily.OPENAI,
+    recommended_config: {
+      temperature: 0.7,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      top_p: 1,
+    },
+  },
+  {
+    name: "gpt-4",
+    display_name: "GPT-4",
+    provider: "OpenAI",
+    family: ModelFamily.OPENAI,
+    recommended_config: {
+      temperature: 0.7,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      top_p: 1,
+    },
+  },
+  {
+    name: "gpt-3.5-turbo",
+    display_name: "GPT-3.5 Turbo",
+    provider: "OpenAI",
+    family: ModelFamily.OPENAI,
+    recommended_config: {
+      temperature: 0.7,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      top_p: 1,
+    },
+  },
   // Phi-3.5 Vision
   {
     name: "Phi-3.5-vision-instruct-q4f32_1-MLC",

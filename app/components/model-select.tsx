@@ -83,8 +83,10 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
     );
   };
 
-  const identifyModelFamily = (model: Model): ModelFamily | null => {
-    return config.models.find((m) => m.name === model)?.family || null;
+  const identifyModelFamily = (model: string): ModelFamily | null => {
+    return (
+      config.models.find((m) => m.name === model)?.family || ModelFamily.OPENAI
+    );
   };
 
   const extractModelDetails = (model: string) => {
@@ -155,7 +157,23 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
   };
 
   useEffect(() => {
-    const sortedModels = sortAndGroupModels(availableModels);
+    const openAIModels = [
+      { name: "GPT-4o", value: "gpt-4o" },
+      { name: "GPT-4", value: "gpt-4" },
+      { name: "GPT-3.5-turbo", value: "gpt-3.5-turbo" },
+    ];
+
+    // 合并 OpenAI 模型和本地模型
+    console.log(
+      "🔍 OpenAI Models:",
+      openAIModels.map((m) => m.value),
+    );
+    const sortedModels = sortAndGroupModels([
+      ...availableModels,
+      ...openAIModels.map((m) => m.value),
+    ]);
+
+    console.log("✅ Sorted Models:", sortedModels);
 
     let filtered = sortedModels;
 
@@ -206,6 +224,12 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
     }
     return counts;
   };
+  const handleSelectModel = (model: string) => {
+    if (model.startsWith("gpt")) {
+      console.log(`Selected OpenAI model: ${model}`);
+    }
+    onSelectModel(model);
+  };
 
   return (
     <div className="screen-model-container">
@@ -244,7 +268,7 @@ const ModelSelect: React.FC<ModelSearchProps> = ({
               isExpanded={expandedModels.has(model[0])}
               determineModelIcon={determineModelIcon}
               extractModelDetails={extractModelDetails}
-              onSelectModel={onSelectModel}
+              onSelectModel={handleSelectModel}
               onClose={onClose}
               handleToggleExpand={handleToggleExpand}
             />

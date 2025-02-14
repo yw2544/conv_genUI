@@ -89,4 +89,5 @@ export const modelDetailsList: ModelDetails[] = [
   { family: ModelFamily.STABLE_LM, name: "StableLM", icon: StablelmIcon },
   { family: ModelFamily.REDPAJAMA, name: "RedPajama", icon: Shirt },
   { family: ModelFamily.WIZARD_MATH, name: "Wizard Math", icon: WandSparkles },
+  { family: ModelFamily.OPENAI, name: "openai", icon: GoogleIcon },
 ];

@@ -1303,8 +1303,8 @@ function _Chat() {
                       //   style={{ border: "none", marginTop: "10px" }}
                       // ></iframe>
                       <iframe
-                        width="600"
-                        height="450"
+                        width="100%"
+                        height="200px"
                         src="/map.html"
                         sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
                       ></iframe>
@@ -1355,14 +1355,14 @@ function _Chat() {
                     {message.role === "assistant" && message.usage && (
                       <>
                         <div>
-                          {`Prefill: ${message.usage.extra.prefill_tokens_per_s.toFixed(
-                            1,
-                          )} tok/s,`}
+                          {message.usage?.extra?.prefill_tokens_per_s
+                            ? `Prefill: ${message.usage.extra.prefill_tokens_per_s.toFixed(1)} tok/s,`
+                            : "Prefill: N/A"}
                         </div>
                         <div>
-                          {`Decode: ${message.usage.extra.decode_tokens_per_s.toFixed(
-                            1,
-                          )} tok/s,`}
+                          {message.usage?.extra?.decode_tokens_per_s
+                            ? `Decode: ${message.usage.extra.decode_tokens_per_s.toFixed(1)} tok/s,`
+                            : "Decode: N/A"}
                         </div>
                       </>
                     )}

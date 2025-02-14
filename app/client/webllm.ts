@@ -14,9 +14,16 @@ import {
   ChatCompletionFinishReason,
 } from "@mlc-ai/web-llm";
 
-import { ChatOptions, LLMApi, LLMConfig, RequestMessage } from "./api";
+import {
+  ChatOptions,
+  LLMApi,
+  LLMConfig,
+  RequestMessage,
+  fetchOpenAI,
+} from "./api";
 import { LogLevel } from "@mlc-ai/web-llm";
 import { fixMessage } from "../utils";
+import { OpenAI_Api } from "./openai";
 import { DEFAULT_MODELS } from "../constant";
 
 const KEEP_ALIVE_INTERVAL = 5_000;
@@ -36,6 +43,7 @@ type WebLLMHandler = ServiceWorkerWebLLMHandler | WebWorkerWebLLMHandler;
 export class WebLLMApi implements LLMApi {
   private llmConfig?: LLMConfig;
   private initialized = false;
+  private openai = new OpenAI_Api();
   webllm: WebLLMHandler;
 
   constructor(
@@ -72,7 +80,18 @@ export class WebLLMApi implements LLMApi {
 
   private async initModel(onUpdate?: (message: string, chunk: string) => void) {
     if (!this.llmConfig) {
-      throw Error("llmConfig is undefined");
+      console.error("❌ llmConfig is undefined in initModel");
+      throw new Error("llmConfig is undefined");
+    }
+
+    if (typeof this.llmConfig.model !== "string") {
+      console.error("❌ llmConfig.model is not a string:", this.llmConfig);
+      throw new Error("Invalid llmConfig: model is not a string");
+    }
+
+    if (this.llmConfig.model.startsWith("gpt")) {
+      console.warn("Skipping model initialization for OpenAI models.");
+      return;
     }
     this.webllm.engine.setInitProgressCallback((report: InitProgressReport) => {
       onUpdate?.(report.text, report.text);
@@ -81,20 +100,36 @@ export class WebLLMApi implements LLMApi {
     this.initialized = true;
   }
 
+  // async chat(options: ChatOptions): Promise<void> {
+  //   if (!this.initialized || this.isDifferentConfig(options.config)) {
+  //     this.llmConfig = { ...(this.llmConfig || {}), ...options.config };
+  //     try {
+  //       await this.initModel(options.onUpdate);
+  //     } catch (err: any) {
+  //       let errorMessage = err.message || err.toString() || "";
+  //       if (errorMessage === "[object Object]") {
+  //         errorMessage = JSON.stringify(err);
+  //       }
+  //       console.error("Error while initializing the model", errorMessage);
+  //       options?.onError?.(errorMessage);
+  //       return;
+  //     }
+  //   }
   async chat(options: ChatOptions): Promise<void> {
-    if (!this.initialized || this.isDifferentConfig(options.config)) {
-      this.llmConfig = { ...(this.llmConfig || {}), ...options.config };
+    if (options.config.model.startsWith("gpt")) {
       try {
-        await this.initModel(options.onUpdate);
-      } catch (err: any) {
-        let errorMessage = err.message || err.toString() || "";
-        if (errorMessage === "[object Object]") {
-          errorMessage = JSON.stringify(err);
-        }
-        console.error("Error while initializing the model", errorMessage);
-        options?.onError?.(errorMessage);
-        return;
+        await this.openai.chat(options);
+      } catch (error) {
+        console.error("❌ OpenAI API Error:", error);
+        options.onError?.(
+          error instanceof Error ? error : new Error(String(error)),
+        );
       }
+      return;
+    }
+
+    if (!options.config.model.startsWith("gpt") && !this.initialized) {
+      await this.initModel();
     }
 
     let reply: string | null = "";
