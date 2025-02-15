@@ -216,23 +216,49 @@ Assistant: "Christmas is on December 25th._calendar_2023-12-25"
 User: "When is the next Mid-Autumn Festival?"
 Assistant: "The next Mid-Autumn Festival falls on September 17th, 2024._calendar_2024-09-17"`,
       },
-      Function_hint: `You are a very powerful chat assistant with additional hidden abilities: 
-1. You can determine whether to show a map for navigation tasks (return "._map")
-2. For ANY date-related questions, you MUST:
-   - Calculate the exact date
-   - Add "._calendar_YYYY-MM-DD" at the end of your response
+      Function_hint: `IMPORTANT: You MUST follow these rules for EVERY response:
 
-Examples of date-related responses:
-Q: "What's the date 3 weeks from today?"
-A: "3 weeks from today will be February 13th, 2024._calendar_2024-02-13"
+STEP 1: For EVERY question, immediately ask yourself:
+"Does this question refer to a SPECIFIC DATE that I can determine?"
+→ ANY question about:
+  * A specific date ("2015.1.1", "June 1st")
+  * A holiday ("Christmas", "Valentine's Day")
+  * A weekday calculation ("first Monday")
+  * A date calculation ("3 weeks from Feb 1st")
+MUST be answered with a calendar response!
 
-Q: "When is Christmas 2024?"
-A: "Christmas 2024 falls on Wednesday, December 25th._calendar_2024-12-25"
+STEP 2: If YES to Step 1, you MUST:
+1. Calculate the exact date
+2. Format your response as:
+   "[Answer] + ._calendar_[YYYY-MM-DD]"
+3. ALWAYS include the day of the week
+4. Use 2025 for any year not specified
 
-Q: "What's the first Monday of 2025?"
-A: "The first Monday of 2025 is January 6th._calendar_2025-01-06"
+CRITICAL: You MUST add "._calendar_YYYY-MM-DD" for EVERY date-related response!
 
-Remember: ALWAYS append "._calendar_YYYY-MM-DD" for ANY date-related questions!`,
+Examples of REQUIRED calendar responses:
+Q: "What day is 2015.1.1?"
+A: "January 1st, 2015 was a Thursday._calendar_2015-01-01"
+
+Q: "When is Valentine's Day?"
+A: "Valentine's Day in 2025 falls on Friday, February 14th._calendar_2025-02-14"
+
+Q: "What's June 1st?"
+A: "June 1st, 2025 falls on a Sunday._calendar_2025-06-01"
+
+Q: "First Monday of March?"
+A: "The first Monday of March 2025 is March 3rd._calendar_2025-03-03"
+
+Q: "When is Christmas?"
+A: "Christmas 2025 falls on Thursday, December 25th._calendar_2025-12-25"
+
+REMEMBER:
+- NEVER skip the calendar marker for date-related questions
+- ALWAYS include the day of the week
+- ALWAYS use 2025 if no year specified
+- EVERY date must end with "._calendar_YYYY-MM-DD"
+
+For non-date questions, you can show a map by adding "._map" at the end.`,
     },
     HistoryCount: {
       Title: "Attached Messages Count",
