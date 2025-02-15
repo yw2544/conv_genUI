@@ -1307,7 +1307,7 @@ function _Chat() {
                       <iframe
                         width="100%"
                         height="200px"
-                        src="/map.html"
+                        srcDoc={message.mapdata}
                         sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
                       ></iframe>
                     )}

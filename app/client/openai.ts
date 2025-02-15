@@ -8,7 +8,9 @@ export class OpenAI_Api {
       const reply =
         data.choices?.[0]?.message?.content || "No response received";
       console.log("API Response:", reply);
-      options.onFinish(reply, data.choices[0].finish_reason, data.usage);
+      !options.if_agent &&
+        options.onFinish?.(reply, data.choices[0].finish_reason, data.usage);
+      options.if_agent && options.onAgent?.(reply);
     } catch (error: any) {
       console.error("OpenAI Error:", error);
       options.onError?.(error);

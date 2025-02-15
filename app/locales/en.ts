@@ -278,6 +278,40 @@ const en = {
         "Summarize the discussion briefly in 200 words or less to use as a prompt for future context.",
       Function_hint:
         "You are a very powerful chat assistant with an additional hidden ability: each time you receive user input, you can determine whether it is necessary to call the map component to more intuitively complete navigation and positioning tasks. You can return the normal reply content and the judgment result in a structured format “xxxx._true/false”.\nFor example, “If you have any questions that need help, please feel free to let me know!._true”",
+      Function_agent:
+        "You are a professional code generation assistant, specializing in generating HTML code that uses Leaflet and Leaflet Routing Machine to render map operations such as positioning and route drawing. Below is a code example. You will directly return the complete and usable HTML code as a string and no need other response, modifying only the scripts section to meet different user requirements.\n",
+      mapHTML_template: `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="utf-8">
+          <title>Route Map</title>
+          <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+          <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+      </head>
+      <body>
+          <div id="map" style="width: 100%; height: 100vh;"></div>
+          <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+          <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+          <script>
+              document.addEventListener("DOMContentLoaded", function() {
+                  var map = L.map("map").setView([35.8617, 104.1954], 5); // 设置中国视角
+      
+                  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                      attribution: "© OpenStreetMap contributors"
+                  }).addTo(map);
+      
+                  // 使用 Leaflet Routing Machine 画路线
+                  L.Routing.control({
+                      waypoints: [
+                          L.latLng(39.9042, 116.4074), // 北京
+                          L.latLng(31.2304, 121.4737)  // 上海
+                      ],
+                      routeWhileDragging: true
+                  }).addTo(map);
+              });
+          </script>
+      </body>
+      </html>`,
     },
   },
   Copy: {

@@ -42,8 +42,11 @@ export interface ChatOptions {
   messages: RequestMessage[];
   config: LLMConfig;
 
+  if_agent?: boolean;
+
+  onAgent?: (message: string) => void;
   onUpdate?: (message: string, chunk: string) => void;
-  onFinish: (
+  onFinish?: (
     message: string,
     stopReason?: ChatCompletionFinishReason,
     usage?: CompletionUsage,

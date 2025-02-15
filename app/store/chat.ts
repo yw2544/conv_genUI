@@ -26,6 +26,7 @@ export type ChatMessage = RequestMessage & {
   model?: Model;
   usage?: CompletionUsage;
   showMap?: boolean;
+  mapdata?: string;
 };
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
@@ -136,6 +137,8 @@ const DEFAULT_CHAT_STATE = {
   sessions: [createEmptySession()],
   currentSessionIndex: 0,
 };
+
+let agent2chat = "It is the meassage from agent";
 
 export const useChatStore = createPersistStore(
   DEFAULT_CHAT_STATE,
@@ -358,6 +361,7 @@ export const useChatStore = createPersistStore(
             cache: useAppConfig.getState().cacheType,
             stream: true,
           },
+          if_agent: false,
           onUpdate(message) {
             botMessage.streaming = true;
             if (message) {
@@ -376,16 +380,40 @@ export const useChatStore = createPersistStore(
 
             const text_response = message.split("_")[0];
 
+            if (need_map) {
+              let FunctionAgent_system: ChatMessage = createMessage({
+                role: "system",
+                content:
+                  Locale.Store.Prompt.Function_agent +
+                  Locale.Store.Prompt.mapHTML_template,
+              });
+
+              const Function_agent_Messages = recentMessages.concat(
+                userMessage,
+                FunctionAgent_system,
+              );
+              llm.chat({
+                messages: Function_agent_Messages,
+                config: {
+                  ...modelConfig,
+                  cache: useAppConfig.getState().cacheType,
+                  stream: false,
+                },
+                onAgent(message) {
+                  agent2chat = message.replace("```", "`");
+                },
+              });
+            }
+
             if (text_response) {
               botMessage.content = text_response;
               botMessage.showMap = need_map;
+              botMessage.mapdata = agent2chat;
               get().onNewMessage(botMessage, llm);
             }
             get().updateCurrentSession((session) => {
               session.isGenerating = false;
             });
-
-            // 调用回调函数，将 need_map 传递出去
           },
           onError(error) {
             const errorMessage =
