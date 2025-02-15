@@ -277,7 +277,7 @@ const en = {
       Summarize:
         "Summarize the discussion briefly in 200 words or less to use as a prompt for future context.",
       Function_hint:
-        "Plz analyze each user message and determine whether it requires the use of a map to assist in providing an answer. If the message indicates a need for a map, respond with 'show map'. If a map is not necessary, respond with 'no'. Your responses should be concise and strictly limited to either 'show map' or 'no'.",
+        "You are a very powerful chat assistant with an additional hidden ability: each time you receive user input, you can determine whether it is necessary to call the map component to more intuitively complete navigation and positioning tasks. You can return the normal reply content and the judgment result in a structured format “xxxx._true/false”.\nFor example, “If you have any questions that need help, please feel free to let me know!._true”",
     },
   },
   Copy: {
