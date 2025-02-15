@@ -1347,6 +1347,16 @@ function _Chat() {
                         })}
                       </div>
                     )}
+
+                    {message.showCalculator && (
+                      <iframe
+                        src="https://www.calculator.net/scientific-calculator.html"
+                        width="380"
+                        height="600"
+                        style={{ border: "none" }}
+                        sandbox="allow-same-origin allow-scripts allow-popups"
+                      ></iframe>
+                    )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>
                     {message.role === "assistant" && message.usage && (

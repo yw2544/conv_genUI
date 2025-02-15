@@ -110,8 +110,10 @@ export abstract class LLMApi {
 }
 
 export async function processGPTResponse(response: string) {
-  const calendarMatch = response.match(/(.+)\.\_calendar\_(\d{4}-\d{2}-\d{2})/);
+  console.log("Processing response:", response); // 添加调试日志
 
+  // 检查是否是日历响应
+  const calendarMatch = response.match(/(.+)\.\_calendar\_(\d{4}-\d{2}-\d{2})/);
   if (calendarMatch) {
     const [_, content, date] = calendarMatch;
     const template = Locale.Store.Prompt.calendarHTML_template;
@@ -120,15 +122,37 @@ export async function processGPTResponse(response: string) {
       showMap: false,
       mapdata: "",
       showCalendar: true,
+      showCalculator: false,
       calendarData: template ? template.replace(/TARGET_DATE/g, date) : "",
+      calculatorData: "",
     };
   }
 
+  // 检查是否是计算器响应
+  const calculatorMatch = response.match(/(.+)\.\_calculator/);
+  console.log("Calculator match:", calculatorMatch); // 添加调试日志
+
+  if (calculatorMatch) {
+    const [_, content] = calculatorMatch;
+    return {
+      content,
+      showMap: false,
+      mapdata: "",
+      showCalendar: false,
+      showCalculator: true,
+      calendarData: "",
+      calculatorData: "",
+    };
+  }
+
+  // 普通响应
   return {
     content: response,
     showMap: false,
     mapdata: "",
     showCalendar: false,
+    showCalculator: false,
     calendarData: "",
+    calculatorData: "",
   };
 }

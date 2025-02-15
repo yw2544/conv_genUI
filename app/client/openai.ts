@@ -4,6 +4,7 @@ import { processGPTResponse } from "./api";
 interface RequestMessage {
   showCalendar?: boolean;
   calendarData?: any; // 或者使用更具体的类型
+  showCalculator?: boolean;
 }
 
 export class OpenAI_Api {
@@ -31,9 +32,12 @@ export class OpenAI_Api {
         );
 
         // 如果需要显示日历，在消息发送后更新消息属性
-        if (processedResponse.showCalendar) {
-          const botMessage = options.messages[options.messages.length - 1];
-          if (botMessage) {
+        const botMessage = messages[messages.length - 1];
+        if (botMessage) {
+          if (processedResponse.showCalculator) {
+            (botMessage as any).showCalculator = true;
+          }
+          if (processedResponse.showCalendar) {
             (botMessage as any).showCalendar = true;
             (botMessage as any).calendarData = processedResponse.calendarData;
           }

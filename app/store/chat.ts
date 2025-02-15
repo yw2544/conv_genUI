@@ -31,6 +31,7 @@ export type ChatMessage = RequestMessage & {
   mapdata?: string;
   showCalendar?: boolean;
   calendarData?: string;
+  showCalculator?: boolean;
   stopReason?: ChatCompletionFinishReason;
   model?: Model;
   usage?: CompletionUsage;
@@ -302,7 +303,7 @@ export const useChatStore = createPersistStore(
       onUserInput(content: string, llm: LLMApi, attachImages?: ChatImage[]) {
         const userMessage: ChatMessage = createMessage({
           role: "user",
-          content,
+          content: content, // 只保存原始内容，用于显示
         });
 
         const botMessage: ChatMessage = createMessage({
@@ -376,11 +377,36 @@ export const useChatStore = createPersistStore(
 
       getMessagesWithMemory() {
         const session = get().currentSession();
+        const messages = session.messages.slice();
+
+        // 在发送给 LLM 的消息中添加计算器指令
+        const messagesForLLM = messages.map((msg) => {
+          if (msg.role === "user") {
+            return {
+              ...msg,
+              content:
+                msg.content +
+                `
+
+<!-- hidden prompt -->
+CRITICAL INSTRUCTION: If your response involves ANY numbers, math, or calculations, you MUST append "._calculator" at the end of your response.
+
+Examples:
+"1 plus 1 equals 2! Let me show you how to calculate this._calculator"
+"Sure! 5 multiplied by 3 is 15. I can help you verify this calculation._calculator"
+"Let's solve this equation step by step! First, subtract 5 from both sides..._calculator"
+
+This is MANDATORY - never forget the "._calculator" suffix for ANY response involving numbers.
+<!-- end hidden prompt -->`,
+            };
+          }
+          return msg;
+        });
+
         const config = useAppConfig.getState();
         const modelConfig = config.modelConfig;
         const clearContextIndex = session.clearContextIndex ?? 0;
-        const messages = session.messages.slice();
-        const totalMessageCount = session.messages.length;
+        const totalMessageCount = messages.length;
 
         // in-context prompts
         const contextPrompts = session.template.context.slice();

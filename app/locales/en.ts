@@ -216,49 +216,31 @@ Assistant: "Christmas is on December 25th._calendar_2023-12-25"
 User: "When is the next Mid-Autumn Festival?"
 Assistant: "The next Mid-Autumn Festival falls on September 17th, 2024._calendar_2024-09-17"`,
       },
-      Function_hint: `IMPORTANT: You MUST follow these rules for EVERY response:
+      Function_hint: `CRITICAL SYSTEM INSTRUCTION:
 
-STEP 1: For EVERY question, immediately ask yourself:
-"Does this question refer to a SPECIFIC DATE that I can determine?"
-→ ANY question about:
-  * A specific date ("2015.1.1", "June 1st")
-  * A holiday ("Christmas", "Valentine's Day")
-  * A weekday calculation ("first Monday")
-  * A date calculation ("3 weeks from Feb 1st")
-MUST be answered with a calendar response!
+For ANY response involving numbers, math, or calculations:
+You can respond naturally, but you MUST append "._calculator" at the end of EVERY response.
 
-STEP 2: If YES to Step 1, you MUST:
-1. Calculate the exact date
-2. Format your response as:
-   "[Answer] + ._calendar_[YYYY-MM-DD]"
-3. ALWAYS include the day of the week
-4. Use 2025 for any year not specified
+Examples:
+User: "What's 1+1?"
+Assistant: "1 plus 1 equals 2! Let me show you how to calculate this._calculator"
 
-CRITICAL: You MUST add "._calendar_YYYY-MM-DD" for EVERY date-related response!
+User: "Can you multiply 5 by 3?"
+Assistant: "Sure! 5 multiplied by 3 is 15. I can help you verify this calculation._calculator"
 
-Examples of REQUIRED calendar responses:
-Q: "What day is 2015.1.1?"
-A: "January 1st, 2015 was a Thursday._calendar_2015-01-01"
+User: "What's 25% of 100?"
+Assistant: "25% of 100 is 25. Would you like me to break down this percentage calculation?._calculator"
 
-Q: "When is Valentine's Day?"
-A: "Valentine's Day in 2025 falls on Friday, February 14th._calendar_2025-02-14"
+User: "Solve 2x + 5 = 15"
+Assistant: "Let's solve this equation step by step! First, subtract 5 from both sides..._calculator"
 
-Q: "What's June 1st?"
-A: "June 1st, 2025 falls on a Sunday._calendar_2025-06-01"
+CRITICAL RULES:
+1. ANY response about numbers/math MUST end with "._calculator"
+2. You can explain, use emojis, be friendly - just add "._calculator" at the end
+3. This is MANDATORY - never forget the "._calculator" suffix
+4. If the question involves ANY numbers or calculations, the response MUST have "._calculator"
 
-Q: "First Monday of March?"
-A: "The first Monday of March 2025 is March 3rd._calendar_2025-03-03"
-
-Q: "When is Christmas?"
-A: "Christmas 2025 falls on Thursday, December 25th._calendar_2025-12-25"
-
-REMEMBER:
-- NEVER skip the calendar marker for date-related questions
-- ALWAYS include the day of the week
-- ALWAYS use 2025 if no year specified
-- EVERY date must end with "._calendar_YYYY-MM-DD"
-
-For non-date questions, you can show a map by adding "._map" at the end.`,
+For non-math questions, respond normally without the suffix.`,
     },
     HistoryCount: {
       Title: "Attached Messages Count",
@@ -331,7 +313,7 @@ For non-date questions, you can show a map by adding "._map" at the end.`,
   },
   Store: {
     DefaultTopic: "New Conversation",
-    BotHello: "Hello! How can I assist you today?",
+    BotHello: "Hello! How can I help you today?",
     Error: "Something went wrong, please try again later.",
     Prompt: {
       History: (content: string) =>
@@ -340,25 +322,31 @@ For non-date questions, you can show a map by adding "._map" at the end.`,
         "Please generate a four to five word title summarizing our conversation without any lead-in, punctuation, quotation marks, periods, symbols, bold text, or additional text. Remove enclosing quotation marks.",
       Summarize:
         "Summarize the discussion briefly in 200 words or less to use as a prompt for future context.",
-      Function_hint: `You are a very powerful chat assistant with additional hidden abilities: 
-1. You can determine whether to show a map for navigation tasks (return "._map")
-2. You can determine whether to show a calendar for date-related queries
+      Function_hint: `CRITICAL SYSTEM INSTRUCTION:
 
-For ANY date-related questions, your response MUST follow this format:
-"[Your answer]._calendar_YYYY-MM-DD"
+For ANY response involving numbers, math, or calculations:
+You can respond naturally, but you MUST append "._calculator" at the end of EVERY response.
 
 Examples:
-Q: "What day is next Tuesday?"
-A: "Next Tuesday is January 23rd._calendar_2024-01-23"
+User: "What's 1+1?"
+Assistant: "1 plus 1 equals 2! Let me show you how to calculate this._calculator"
 
-Q: "When is Valentine's Day?"
-A: "Valentine's Day falls on Wednesday, February 14th._calendar_2024-02-14"
+User: "Can you multiply 5 by 3?"
+Assistant: "Sure! 5 multiplied by 3 is 15. I can help you verify this calculation._calculator"
 
-Q: "What's the date 3 days from now?"
-A: "Three days from today will be January 20th._calendar_2024-01-20"
+User: "What's 25% of 100?"
+Assistant: "25% of 100 is 25. Would you like me to break down this percentage calculation?._calculator"
 
-Q: "What day of the week is Christmas 2024?"
-A: "Christmas 2024 falls on a Wednesday._calendar_2024-12-25"`,
+User: "Solve 2x + 5 = 15"
+Assistant: "Let's solve this equation step by step! First, subtract 5 from both sides..._calculator"
+
+CRITICAL RULES:
+1. ANY response about numbers/math MUST end with "._calculator"
+2. You can explain, use emojis, be friendly - just add "._calculator" at the end
+3. This is MANDATORY - never forget the "._calculator" suffix
+4. If the question involves ANY numbers or calculations, the response MUST have "._calculator"
+
+For non-math questions, respond normally without the suffix.`,
       Function_agent:
         "You are a professional code generation assistant, specializing in generating HTML code that uses Leaflet and Leaflet Routing Machine to render map operations such as positioning and route drawing. Below is a code example. You will directly return the complete and usable HTML code as a string and no need other response, modifying only the scripts section to meet different user requirements.\n",
       mapHTML_template: `<!DOCTYPE html>
@@ -472,6 +460,11 @@ A: "Christmas 2024 falls on a Wednesday._calendar_2024-12-25"`,
     </script>
 </body>
 </html>`,
+      calculatorHTML_template: `<iframe src="https://www.calculator.net/scientific-calculator.html"
+        width="380" height="600" 
+        style="border: none;"
+        sandbox="allow-same-origin allow-scripts allow-popups">
+      </iframe>`,
     },
   },
   Copy: {
