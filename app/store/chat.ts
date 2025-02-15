@@ -138,8 +138,6 @@ const DEFAULT_CHAT_STATE = {
   currentSessionIndex: 0,
 };
 
-let agent2chat = "It is the meassage from agent";
-
 export const useChatStore = createPersistStore(
   DEFAULT_CHAT_STATE,
   (set, _get) => {
@@ -333,7 +331,11 @@ export const useChatStore = createPersistStore(
           role: "system",
           content: Locale.Store.Prompt.Function_hint,
         });
-
+        const agentMessage: ChatMessage = createMessage({
+          role: "assistant",
+          streaming: false,
+          model: modelConfig.model,
+        });
         // get recent messages
         const recentMessages = get().getMessagesWithMemory();
         const sendMessages = recentMessages.concat(userMessage, systemmessage);
@@ -392,6 +394,7 @@ export const useChatStore = createPersistStore(
                 userMessage,
                 FunctionAgent_system,
               );
+              console.log("Function agent messages: ", Function_agent_Messages);
               llm.chat({
                 messages: Function_agent_Messages,
                 config: {
@@ -400,7 +403,11 @@ export const useChatStore = createPersistStore(
                   stream: false,
                 },
                 onAgent(message) {
-                  agent2chat = message.replace("```", "`");
+                  agentMessage.mapdata = message.replace("```", "`");
+                  console.log(
+                    "Map data of agentmessage in agent chat: ",
+                    agentMessage.mapdata,
+                  );
                 },
               });
             }
@@ -408,7 +415,10 @@ export const useChatStore = createPersistStore(
             if (text_response) {
               botMessage.content = text_response;
               botMessage.showMap = need_map;
-              botMessage.mapdata = agent2chat;
+              botMessage.mapdata = agentMessage.mapdata;
+              console.log("Map data of agentmessage: ", agentMessage.mapdata);
+              console.log("Map data of botMessage: ", agentMessage.mapdata);
+
               get().onNewMessage(botMessage, llm);
             }
             get().updateCurrentSession((session) => {
