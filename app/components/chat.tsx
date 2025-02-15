@@ -1295,15 +1295,8 @@ function _Chat() {
                       parentRef={scrollRef}
                       defaultShow={i >= messages.length - 6}
                     />
-                    {}
+
                     {message.showMap && (
-                      // <iframe
-                      //   src="https://example.com"
-                      //   width="100%"
-                      //   height="200px"
-                      //   sandbox="allow-same-origin allow-scripts allow-popups allow-top-navigation"
-                      //   style={{ border: "none", marginTop: "10px" }}
-                      // ></iframe>
                       <iframe
                         width="100%"
                         height="200px"
@@ -1311,13 +1304,15 @@ function _Chat() {
                         sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
                       ></iframe>
                     )}
-                    {/* <iframe
-                      src={getMessageTextContent(message).includes("http") ? getMessageTextContent(message) : "https://default-url.com"}
-                      width="100%"
-                      height="200px"
-                      style={{ border: "none", marginTop: "10px" }}
-                    ></iframe>
-                    */}
+
+                    {message.showCalendar && (
+                      <iframe
+                        width="100%"
+                        height="300px"
+                        srcDoc={message.calendarData}
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
+                      ></iframe>
+                    )}
                     {getMessageImages(message).length == 1 && (
                       <Image
                         className={styles["chat-message-item-image"]}

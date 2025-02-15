@@ -195,6 +195,44 @@ const en = {
       EditModal: {
         Title: "Edit Conversation",
       },
+      Calendar: {
+        system: `When users ask date-related questions (including but not limited to:
+- Asking about specific dates
+- Asking about days of the week
+- Asking about holidays
+- Asking about nth weekday of a month/year
+- Asking about date relationships
+etc.), you need to:
+1. Provide accurate answers
+2. Add a date marker at the end of your response in the format "._calendar_YYYY-MM-DD"
+
+Examples:
+User: "What's the first Monday of 2025?"
+Assistant: "The first Monday of 2025 is January 6th._calendar_2025-01-06"
+
+User: "When is Christmas?"
+Assistant: "Christmas is on December 25th._calendar_2023-12-25"
+
+User: "When is the next Mid-Autumn Festival?"
+Assistant: "The next Mid-Autumn Festival falls on September 17th, 2024._calendar_2024-09-17"`,
+      },
+      Function_hint: `You are a very powerful chat assistant with additional hidden abilities: 
+1. You can determine whether to show a map for navigation tasks (return "._map")
+2. For ANY date-related questions, you MUST:
+   - Calculate the exact date
+   - Add "._calendar_YYYY-MM-DD" at the end of your response
+
+Examples of date-related responses:
+Q: "What's the date 3 weeks from today?"
+A: "3 weeks from today will be February 13th, 2024._calendar_2024-02-13"
+
+Q: "When is Christmas 2024?"
+A: "Christmas 2024 falls on Wednesday, December 25th._calendar_2024-12-25"
+
+Q: "What's the first Monday of 2025?"
+A: "The first Monday of 2025 is January 6th._calendar_2025-01-06"
+
+Remember: ALWAYS append "._calendar_YYYY-MM-DD" for ANY date-related questions!`,
     },
     HistoryCount: {
       Title: "Attached Messages Count",
@@ -276,8 +314,25 @@ const en = {
         "Please generate a four to five word title summarizing our conversation without any lead-in, punctuation, quotation marks, periods, symbols, bold text, or additional text. Remove enclosing quotation marks.",
       Summarize:
         "Summarize the discussion briefly in 200 words or less to use as a prompt for future context.",
-      Function_hint:
-        "You are a very powerful chat assistant with an additional hidden ability: each time you receive user input, you can determine whether it is necessary to call the map component to more intuitively complete navigation and positioning tasks. You can return the normal reply content and the judgment result in a structured format “xxxx._true/false”.\nFor example, “If you have any questions that need help, please feel free to let me know!._true”",
+      Function_hint: `You are a very powerful chat assistant with additional hidden abilities: 
+1. You can determine whether to show a map for navigation tasks (return "._map")
+2. You can determine whether to show a calendar for date-related queries
+
+For ANY date-related questions, your response MUST follow this format:
+"[Your answer]._calendar_YYYY-MM-DD"
+
+Examples:
+Q: "What day is next Tuesday?"
+A: "Next Tuesday is January 23rd._calendar_2024-01-23"
+
+Q: "When is Valentine's Day?"
+A: "Valentine's Day falls on Wednesday, February 14th._calendar_2024-02-14"
+
+Q: "What's the date 3 days from now?"
+A: "Three days from today will be January 20th._calendar_2024-01-20"
+
+Q: "What day of the week is Christmas 2024?"
+A: "Christmas 2024 falls on a Wednesday._calendar_2024-12-25"`,
       Function_agent:
         "You are a professional code generation assistant, specializing in generating HTML code that uses Leaflet and Leaflet Routing Machine to render map operations such as positioning and route drawing. Below is a code example. You will directly return the complete and usable HTML code as a string and no need other response, modifying only the scripts section to meet different user requirements.\n",
       mapHTML_template: `<!DOCTYPE html>
@@ -312,6 +367,85 @@ const en = {
           </script>
       </body>
       </html>`,
+      calendarHTML_template: `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .calendar {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        .header {
+            text-align: center;
+            padding: 10px;
+            background: #f0f0f0;
+            font-size: 18px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #ddd;
+        }
+        .cell {
+            background: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .weekday {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+        .highlight {
+            background: #ffeb3b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar">
+        <div class="header" id="monthYear"></div>
+        <div class="grid">
+            <div class="cell weekday">Sun</div>
+            <div class="cell weekday">Mon</div>
+            <div class="cell weekday">Tue</div>
+            <div class="cell weekday">Wed</div>
+            <div class="cell weekday">Thu</div>
+            <div class="cell weekday">Fri</div>
+            <div class="cell weekday">Sat</div>
+        </div>
+        <div class="grid" id="dates"></div>
+    </div>
+    <script>
+        const date = new Date('TARGET_DATE');
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const targetDay = date.getDate();
+
+        document.getElementById('monthYear').textContent = 
+            new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const grid = document.getElementById('dates');
+
+        for (let i = 0; i < 42; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            const dayOfMonth = i - firstDay + 1;
+            
+            if (dayOfMonth > 0 && dayOfMonth <= daysInMonth) {
+                cell.textContent = dayOfMonth;
+                if (dayOfMonth === targetDay) {
+                    cell.className = 'cell highlight';
+                }
+            }
+            grid.appendChild(cell);
+        }
+    </script>
+</body>
+</html>`,
     },
   },
   Copy: {

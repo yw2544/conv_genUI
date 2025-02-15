@@ -1,4 +1,10 @@
 import { ChatOptions, fetchOpenAI } from "./api";
+import { processGPTResponse } from "./api";
+
+interface RequestMessage {
+  showCalendar?: boolean;
+  calendarData?: any; // 或者使用更具体的类型
+}
 
 export class OpenAI_Api {
   async chat(options: ChatOptions) {
@@ -7,9 +13,32 @@ export class OpenAI_Api {
       const data = await fetchOpenAI(messages, config);
       const reply =
         data.choices?.[0]?.message?.content || "No response received";
-      console.log("API Response:", reply);
-      !options.if_agent &&
-        options.onFinish?.(reply, data.choices[0].finish_reason, data.usage);
+
+      const processedResponse = await processGPTResponse(reply);
+
+      if (!options.if_agent) {
+        if (config.stream) {
+          options.onUpdate?.(
+            processedResponse.content,
+            data.choices[0].finish_reason,
+          );
+        }
+
+        options.onFinish?.(
+          processedResponse.content,
+          data.choices[0].finish_reason,
+          data.usage,
+        );
+
+        // 如果需要显示日历，在消息发送后更新消息属性
+        if (processedResponse.showCalendar) {
+          const botMessage = options.messages[options.messages.length - 1];
+          if (botMessage) {
+            (botMessage as any).showCalendar = true;
+            (botMessage as any).calendarData = processedResponse.calendarData;
+          }
+        }
+      }
       options.if_agent && options.onAgent?.(reply);
     } catch (error: any) {
       console.error("OpenAI Error:", error);

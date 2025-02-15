@@ -10,7 +10,12 @@ import {
   DEFAULT_SYSTEM_TEMPLATE,
   StoreKey,
 } from "../constant";
-import { RequestMessage, MultimodalContent, LLMApi } from "../client/api";
+import {
+  RequestMessage,
+  MultimodalContent,
+  LLMApi,
+  processGPTResponse,
+} from "../client/api";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
@@ -22,11 +27,13 @@ export type ChatMessage = RequestMessage & {
   streaming?: boolean;
   isError?: boolean;
   id: string;
+  showMap?: boolean;
+  mapdata?: string;
+  showCalendar?: boolean;
+  calendarData?: string;
   stopReason?: ChatCompletionFinishReason;
   model?: Model;
   usage?: CompletionUsage;
-  showMap?: boolean;
-  mapdata?: string;
 };
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
@@ -131,6 +138,12 @@ function fillTemplateWith(input: string, modelConfig: ConfigType) {
   });
 
   return output;
+}
+
+interface ChatStore {
+  sessions: ChatSession[];
+  currentSessionIndex: number;
+  currentMessageId?: string;
 }
 
 const DEFAULT_CHAT_STATE = {
@@ -287,158 +300,63 @@ export const useChatStore = createPersistStore(
       },
 
       onUserInput(content: string, llm: LLMApi, attachImages?: ChatImage[]) {
-        const modelConfig = useAppConfig.getState().modelConfig;
-
-        const userContent = fillTemplateWith(content, useAppConfig.getState());
-        log.debug("[User Input] after template: ", userContent);
-
-        let mContent: string | MultimodalContent[] = userContent;
-
-        if (attachImages && attachImages.length > 0) {
-          mContent = [
-            {
-              type: "text",
-              text: userContent,
-            },
-          ];
-          mContent = mContent.concat(
-            attachImages.map((imageData) => {
-              return {
-                type: "image_url",
-                image_url: {
-                  url: imageData.url,
-                },
-                dimension: {
-                  width: imageData.width,
-                  height: imageData.height,
-                },
-              };
-            }),
-          );
-        }
-        let userMessage: ChatMessage = createMessage({
+        const userMessage: ChatMessage = createMessage({
           role: "user",
-          content: mContent,
+          content,
         });
 
         const botMessage: ChatMessage = createMessage({
           role: "assistant",
           streaming: true,
-          model: modelConfig.model,
+          content: "",
         });
 
-        let systemmessage: ChatMessage = createMessage({
-          role: "system",
-          content: Locale.Store.Prompt.Function_hint,
-        });
-        const agentMessage: ChatMessage = createMessage({
-          role: "assistant",
-          streaming: false,
-          model: modelConfig.model,
-        });
-        // get recent messages
-        const recentMessages = get().getMessagesWithMemory();
-        const sendMessages = recentMessages.concat(userMessage, systemmessage);
-
-        log.debug("Messages: ", sendMessages);
-
-        // save user's and bot's message
         get().updateCurrentSession((session) => {
-          const savedUserMessage = {
-            ...userMessage,
-            content: mContent,
-          };
-          session.messages = session.messages.concat([
-            savedUserMessage,
-            botMessage,
-          ]);
+          session.messages = session.messages.concat([userMessage, botMessage]);
           session.isGenerating = true;
         });
 
-        // make request
         llm.chat({
-          messages: sendMessages,
+          messages: get().getMessagesWithMemory(),
           config: {
-            ...modelConfig,
-            cache: useAppConfig.getState().cacheType,
+            ...useAppConfig.getState().modelConfig,
             stream: true,
+            cache: useAppConfig.getState().cacheType,
           },
-          if_agent: false,
           onUpdate(message) {
             botMessage.streaming = true;
             if (message) {
               botMessage.content = message;
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
+              });
             }
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
           },
-          onFinish(message, stopReason, usage) {
+          async onFinish(message, stopReason, usage) {
             botMessage.streaming = false;
+            botMessage.content = message;
             botMessage.usage = usage;
             botMessage.stopReason = stopReason;
 
-            const need_map = message.includes("_true");
-
-            const text_response = message.split("_")[0];
-
-            if (need_map) {
-              let FunctionAgent_system: ChatMessage = createMessage({
-                role: "system",
-                content:
-                  Locale.Store.Prompt.Function_agent +
-                  Locale.Store.Prompt.mapHTML_template,
-              });
-
-              const Function_agent_Messages = recentMessages.concat(
-                userMessage,
-                FunctionAgent_system,
-              );
-              console.log("Function agent messages: ", Function_agent_Messages);
-              llm.chat({
-                messages: Function_agent_Messages,
-                config: {
-                  ...modelConfig,
-                  cache: useAppConfig.getState().cacheType,
-                  stream: false,
-                },
-                onAgent(message) {
-                  agentMessage.mapdata = message.replace("```", "`");
-                  console.log(
-                    "Map data of agentmessage in agent chat: ",
-                    agentMessage.mapdata,
-                  );
-                },
-              });
+            const processedResponse = await processGPTResponse(message);
+            if (processedResponse.showCalendar) {
+              botMessage.showCalendar = processedResponse.showCalendar;
+              botMessage.calendarData = processedResponse.calendarData;
             }
 
-            if (text_response) {
-              botMessage.content = text_response;
-              botMessage.showMap = need_map;
-              botMessage.mapdata = agentMessage.mapdata;
-              console.log("Map data of agentmessage: ", agentMessage.mapdata);
-              console.log("Map data of botMessage: ", agentMessage.mapdata);
-
-              get().onNewMessage(botMessage, llm);
-            }
+            get().onNewMessage(botMessage, llm);
             get().updateCurrentSession((session) => {
               session.isGenerating = false;
             });
           },
           onError(error) {
-            const errorMessage =
-              error.message || error.toString?.() || undefined;
-            const isAborted = errorMessage?.includes("aborted");
-            botMessage.content += "\n\n" + errorMessage;
+            botMessage.content += "\n\n" + (error.message || error.toString());
             botMessage.streaming = false;
-            userMessage.isError = !isAborted;
-            botMessage.isError = !isAborted;
+            botMessage.isError = true;
             get().updateCurrentSession((session) => {
               session.messages = session.messages.concat();
               session.isGenerating = false;
             });
-
-            console.error("[Chat] failed ", error);
           },
         });
       },

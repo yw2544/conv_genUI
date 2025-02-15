@@ -1,6 +1,7 @@
 import { ChatCompletionFinishReason, CompletionUsage } from "@mlc-ai/web-llm";
 import { CacheType, Model } from "../store";
 import { ModelFamily } from "../constant";
+import Locale from "../locales";
 
 export const ROLES = ["system", "user", "assistant"] as const;
 
@@ -106,4 +107,28 @@ export abstract class LLMApi {
   abstract chat(options: ChatOptions): Promise<void>;
   abstract abort(): Promise<void>;
   abstract models(): Promise<ModelRecord[] | Model[]>;
+}
+
+export async function processGPTResponse(response: string) {
+  const calendarMatch = response.match(/(.+)\.\_calendar\_(\d{4}-\d{2}-\d{2})/);
+
+  if (calendarMatch) {
+    const [_, content, date] = calendarMatch;
+    const template = Locale.Store.Prompt.calendarHTML_template;
+    return {
+      content,
+      showMap: false,
+      mapdata: "",
+      showCalendar: true,
+      calendarData: template ? template.replace(/TARGET_DATE/g, date) : "",
+    };
+  }
+
+  return {
+    content: response,
+    showMap: false,
+    mapdata: "",
+    showCalendar: false,
+    calendarData: "",
+  };
 }

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        table {
+            width: 300px;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            width: 14.28%;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .today {
+            background-color: #ffcccb;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 id="month-year"></h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Sun</th>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+                <th>Sat</th>
+            </tr>
+        </thead>
+        <tbody id="calendar-body">
+            <!-- Days will be injected here -->
+        </tbody>
+    </table>
+
+    <script>
+        function generateCalendar(year, month) {
+            const today = new Date();
+            const firstDay = new Date(year, month, 1).getDay(); 
+            const daysInMonth = new Date(year, month + 1, 0).getDate(); 
+
+            document.getElementById("month-year").textContent = 
+                new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            let table = document.getElementById("calendar-body");
+            table.innerHTML = ""; 
+
+            let date = 1;
+            for (let i = 0; i < 6; i++) {
+                let row = document.createElement("tr");
+
+                for (let j = 0; j < 7; j++) {
+                    let cell = document.createElement("td");
+
+                    if (i === 0 && j < firstDay) {
+                        cell.innerHTML = "";
+                    } else if (date > daysInMonth) {
+                        break;
+                    } else {
+                        cell.innerHTML = date;
+
+                        if (year === today.getFullYear() && month === today.getMonth() && date === today.getDate()) {
+                            cell.classList.add("today");
+                        }
+                        date++;
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+        }
+
+        const today = new Date();
+        generateCalendar(today.getFullYear(), today.getMonth());
+    </script>
+
+</body>
+</html>
