@@ -216,31 +216,25 @@ Assistant: "Christmas is on December 25th._calendar_2023-12-25"
 User: "When is the next Mid-Autumn Festival?"
 Assistant: "The next Mid-Autumn Festival falls on September 17th, 2024._calendar_2024-09-17"`,
       },
-      Function_hint: `CRITICAL SYSTEM INSTRUCTION:
+      Function_hint: `I can help you with various tasks. Just ask me about:
 
-For ANY response involving numbers, math, or calculations:
-You can respond naturally, but you MUST append "._calculator" at the end of EVERY response.
+1. Math & Calculations
+   Example: "What's 25% of 80?"
+   I'll respond: "25% of 80 is 20._calculator"
 
-Examples:
-User: "What's 1+1?"
-Assistant: "1 plus 1 equals 2! Let me show you how to calculate this._calculator"
+2. Dates & Calendar
+   Example: "When is Christmas 2025?"
+   I'll respond: "Christmas 2025 falls on Thursday, December 25th._calendar_2025-12-25"
 
-User: "Can you multiply 5 by 3?"
-Assistant: "Sure! 5 multiplied by 3 is 15. I can help you verify this calculation._calculator"
+3. Bank Account Information
+   Example: "Show my account balance"
+   I'll respond: "Here are your bank account details._bank"
 
-User: "What's 25% of 100?"
-Assistant: "25% of 100 is 25. Would you like me to break down this percentage calculation?._calculator"
+4. Location & Navigation
+   Example: "How do I get from Beijing to Shanghai?"
+   I'll respond: "Let me show you the route on a map._map"
 
-User: "Solve 2x + 5 = 15"
-Assistant: "Let's solve this equation step by step! First, subtract 5 from both sides..._calculator"
-
-CRITICAL RULES:
-1. ANY response about numbers/math MUST end with "._calculator"
-2. You can explain, use emojis, be friendly - just add "._calculator" at the end
-3. This is MANDATORY - never forget the "._calculator" suffix
-4. If the question involves ANY numbers or calculations, the response MUST have "._calculator"
-
-For non-math questions, respond normally without the suffix.`,
+Just ask your question naturally, and I'll provide the appropriate visualization!`,
     },
     HistoryCount: {
       Title: "Attached Messages Count",
@@ -322,33 +316,25 @@ For non-math questions, respond normally without the suffix.`,
         "Please generate a four to five word title summarizing our conversation without any lead-in, punctuation, quotation marks, periods, symbols, bold text, or additional text. Remove enclosing quotation marks.",
       Summarize:
         "Summarize the discussion briefly in 200 words or less to use as a prompt for future context.",
-      Function_hint: `CRITICAL SYSTEM INSTRUCTION:
+      Function_hint: `I can help you with various tasks. Just ask me about:
 
-For ANY response involving numbers, math, or calculations:
-You can respond naturally, but you MUST append "._calculator" at the end of EVERY response.
+1. Math & Calculations
+   Example: "What's 25% of 80?"
+   I'll respond: "25% of 80 is 20._calculator"
 
-Examples:
-User: "What's 1+1?"
-Assistant: "1 plus 1 equals 2! Let me show you how to calculate this._calculator"
+2. Dates & Calendar
+   Example: "When is Christmas 2025?"
+   I'll respond: "Christmas 2025 falls on Thursday, December 25th._calendar_2025-12-25"
 
-User: "Can you multiply 5 by 3?"
-Assistant: "Sure! 5 multiplied by 3 is 15. I can help you verify this calculation._calculator"
+3. Bank Account Information
+   Example: "Show my account balance"
+   I'll respond: "Here are your bank account details._bank"
 
-User: "What's 25% of 100?"
-Assistant: "25% of 100 is 25. Would you like me to break down this percentage calculation?._calculator"
+4. Location & Navigation
+   Example: "How do I get from Beijing to Shanghai?"
+   I'll respond: "Let me show you the route on a map._map"
 
-User: "Solve 2x + 5 = 15"
-Assistant: "Let's solve this equation step by step! First, subtract 5 from both sides..._calculator"
-
-CRITICAL RULES:
-1. ANY response about numbers/math MUST end with "._calculator"
-2. You can explain, use emojis, be friendly - just add "._calculator" at the end
-3. This is MANDATORY - never forget the "._calculator" suffix
-4. If the question involves ANY numbers or calculations, the response MUST have "._calculator"
-
-For non-math questions, respond normally without the suffix.`,
-      Function_agent:
-        "You are a professional code generation assistant, specializing in generating HTML code that uses Leaflet and Leaflet Routing Machine to render map operations such as positioning and route drawing. Below is a code example. You will directly return the complete and usable HTML code as a string and no need other response, modifying only the scripts section to meet different user requirements.\n",
+Just ask your question naturally, and I'll provide the appropriate visualization!`,
       mapHTML_template: `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -385,35 +371,50 @@ For non-math questions, respond normally without the suffix.`,
 <html>
 <head>
     <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
         .calendar {
             font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 20px auto;
+            width: 300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .header {
             text-align: center;
             padding: 10px;
             background: #f0f0f0;
-            font-size: 18px;
+            font-size: 16px;
+            border-radius: 8px 8px 0 0;
         }
         .grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 1px;
             background: #ddd;
+            padding: 1px;
         }
         .cell {
             background: white;
-            padding: 10px;
+            padding: 8px 4px;
             text-align: center;
+            font-size: 14px;
         }
         .weekday {
             background: #f0f0f0;
             font-weight: bold;
         }
         .highlight {
-            background: #ffeb3b;
+            background: #2196F3;
+            color: white;
             font-weight: bold;
+        }
+        .empty {
+            background: #f9f9f9;
         }
     </style>
 </head>
@@ -433,6 +434,7 @@ For non-math questions, respond normally without the suffix.`,
     </div>
     <script>
         const date = new Date('TARGET_DATE');
+        date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
         const year = date.getFullYear();
         const month = date.getMonth();
         const targetDay = date.getDate();
@@ -446,14 +448,16 @@ For non-math questions, respond normally without the suffix.`,
 
         for (let i = 0; i < 42; i++) {
             const cell = document.createElement('div');
-            cell.className = 'cell';
             const dayOfMonth = i - firstDay + 1;
             
             if (dayOfMonth > 0 && dayOfMonth <= daysInMonth) {
+                cell.className = 'cell';
                 cell.textContent = dayOfMonth;
                 if (dayOfMonth === targetDay) {
                     cell.className = 'cell highlight';
                 }
+            } else {
+                cell.className = 'cell empty';
             }
             grid.appendChild(cell);
         }
@@ -465,6 +469,38 @@ For non-math questions, respond normally without the suffix.`,
         style="border: none;"
         sandbox="allow-same-origin allow-scripts allow-popups">
       </iframe>`,
+      bankHTML_template: `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Bank Accounts</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7; }
+                table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background: #222; color: white; }
+                td strong { color: #333; }
+            </style>
+        </head>
+        <body>
+            <h2>Bank Account Summary</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Account</th>
+                        <th>Product</th>
+                        <th>Last Date</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    BANK_DATA_ROWS
+                </tbody>
+            </table>
+        </body>
+        </html>`,
     },
   },
   Copy: {

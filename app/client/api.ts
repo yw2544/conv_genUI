@@ -2,6 +2,8 @@ import { ChatCompletionFinishReason, CompletionUsage } from "@mlc-ai/web-llm";
 import { CacheType, Model } from "../store";
 import { ModelFamily } from "../constant";
 import Locale from "../locales";
+import fs from "fs";
+import path from "path";
 
 export const ROLES = ["system", "user", "assistant"] as const;
 
@@ -109,8 +111,100 @@ export abstract class LLMApi {
   abstract models(): Promise<ModelRecord[] | Model[]>;
 }
 
+function parseBankData() {
+  const data = fs.readFileSync(
+    path.join(__dirname, "../../public/bank_data.txt"),
+    "utf-8",
+  );
+  return data
+    .split("\n")
+    .map((line) => {
+      if (!line.trim()) return null;
+      const [account, name, product, date, balance] = line.split(",");
+      return { account, name, product, date, balance };
+    })
+    .filter((row) => row !== null);
+}
+
+async function fetchBankData() {
+  try {
+    const response = await fetch("/bank_data.txt");
+    const data = await response.text();
+    return data
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => {
+        const [account, name, product, date, balance] = line.split(",");
+        return { account, name, product, date, balance };
+      });
+  } catch (error) {
+    console.error("Error fetching bank data:", error);
+    return [];
+  }
+}
+
 export async function processGPTResponse(response: string) {
-  console.log("Processing response:", response); // 添加调试日志
+  console.log("Processing response:", response);
+
+  // 检查是否是地图响应
+  const mapMatch = response.match(/(.+)\.\_map/);
+  if (mapMatch) {
+    const [_, content] = mapMatch;
+    return {
+      content,
+      showMap: true,
+      mapdata: content,
+      showBank: false,
+      bankData: "",
+      showCalendar: false,
+      calendarData: "",
+      showCalculator: false,
+    };
+  }
+
+  // 检查是否是银行响应
+  const bankMatch = response.match(/(.+)\.\_bank/);
+  if (bankMatch) {
+    console.log("Bank match found");
+    const [_, content] = bankMatch;
+
+    const bankData = await fetchBankData();
+    console.log("Bank data:", bankData);
+
+    let tableRows = bankData
+      .map(
+        (row) => `
+      <tr>
+        <td><strong>${row.name}</strong></td>
+        <td>${row.account}</td>
+        <td>${row.product}</td>
+        <td>${row.date}</td>
+        <td style="color: ${parseFloat(row.balance) < 0 ? "red" : "green"};">
+          $${parseFloat(row.balance).toLocaleString()}
+        </td>
+      </tr>
+    `,
+      )
+      .join("");
+
+    console.log("Table rows:", tableRows);
+
+    const template = Locale.Store.Prompt.bankHTML_template;
+    const bankHtml = template.replace("BANK_DATA_ROWS", tableRows);
+
+    console.log("Final HTML:", bankHtml);
+
+    return {
+      content,
+      showBank: true,
+      bankData: bankHtml,
+      showMap: false,
+      mapdata: "",
+      showCalendar: false,
+      calendarData: "",
+      showCalculator: false,
+    };
+  }
 
   // 检查是否是日历响应
   const calendarMatch = response.match(/(.+)\.\_calendar\_(\d{4}-\d{2}-\d{2})/);

@@ -32,6 +32,8 @@ export type ChatMessage = RequestMessage & {
   showCalendar?: boolean;
   calendarData?: string;
   showCalculator?: boolean;
+  showBank?: boolean;
+  bankData?: string;
   stopReason?: ChatCompletionFinishReason;
   model?: Model;
   usage?: CompletionUsage;
@@ -303,7 +305,30 @@ export const useChatStore = createPersistStore(
       onUserInput(content: string, llm: LLMApi, attachImages?: ChatImage[]) {
         const userMessage: ChatMessage = createMessage({
           role: "user",
-          content: content, // 只保存原始内容，用于显示
+          content:
+            content +
+            `
+
+
+CRITICAL INSTRUCTION: You MUST follow these response format rules:
+
+1. For BANK-related questions (balance, accounts, banking information):
+Response format: "Yes, I'll help you check your bank accounts. Let me show you your account details._bank"
+Example: "What's my balance?" -> "Yes, I'll help you check your bank accounts. Let me show you your account details._bank"
+
+2. For CALCULATOR/MATH questions (any numbers or calculations):
+Response format: Add "._calculator" at the end
+Example: "What's 5+3?" -> "Let me calculate that for you: 5+3=8._calculator"
+
+3. For CALENDAR/DATE questions (scheduling, dates, time):
+Response format: Add "._calendar_YYYY-MM-DD" at the end
+Example: "Show me March 1st" -> "Here's your calendar for March 1st._calendar_2024-03-01"
+
+4. For MAP/LOCATION questions (places, directions):
+Response format: Add "._map" at the end
+Example: "Where is Paris?" -> "Let me show you Paris on the map._map"
+
+This is MANDATORY - you must use these EXACT formats for their respective types of questions.`,
         });
 
         const botMessage: ChatMessage = createMessage({
@@ -340,6 +365,10 @@ export const useChatStore = createPersistStore(
             botMessage.stopReason = stopReason;
 
             const processedResponse = await processGPTResponse(message);
+            if (processedResponse.showBank) {
+              botMessage.showBank = processedResponse.showBank;
+              botMessage.bankData = processedResponse.bankData;
+            }
             if (processedResponse.showCalendar) {
               botMessage.showCalendar = processedResponse.showCalendar;
               botMessage.calendarData = processedResponse.calendarData;

@@ -133,13 +133,25 @@ export class WebLLMApi implements LLMApi {
       await this.initModel();
     }
 
+    const messages = options.messages;
+
+    if (
+      !messages ||
+      !messages.length ||
+      !messages[messages.length - 1]?.content
+    ) {
+      throw new Error("Invalid message content");
+    }
+
+    const content = messages[messages.length - 1].content;
+
     let reply: string | null = "";
     let stopReason: ChatCompletionFinishReason | undefined;
     let usage: CompletionUsage | undefined;
     try {
       const completion = await this.chatCompletion(
         !!options.config.stream,
-        options.messages,
+        messages,
         options.onUpdate,
       );
       reply = completion.content;

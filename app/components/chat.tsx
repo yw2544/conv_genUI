@@ -1028,6 +1028,7 @@ function _Chat() {
                 rej(e);
               });
           }
+          fileInput.click();
         };
         fileInput.click();
       })),
@@ -1280,7 +1281,10 @@ function _Chat() {
                   )}
                   <div className={styles["chat-message-item"]}>
                     <Markdown
-                      content={getMessageTextContent(message)}
+                      content={getMessageTextContent(message).replace(
+                        /CRITICAL INSTRUCTION[\s\S]*$/,
+                        "",
+                      )}
                       loading={
                         (message.preview || message.streaming) &&
                         message.content.length === 0 &&
@@ -1298,11 +1302,16 @@ function _Chat() {
 
                     {message.showMap && (
                       <iframe
-                        width="100%"
-                        height="200px"
-                        srcDoc={message.mapdata}
-                        sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
-                      ></iframe>
+                        srcDoc={Locale.Store.Prompt.mapHTML_template}
+                        style={{
+                          width: "100%",
+                          height: "400px",
+                          border: "none",
+                          borderRadius: "10px",
+                          marginTop: "10px",
+                        }}
+                        sandbox="allow-same-origin allow-scripts"
+                      />
                     )}
 
                     {message.showCalendar && (
@@ -1356,6 +1365,20 @@ function _Chat() {
                         style={{ border: "none" }}
                         sandbox="allow-same-origin allow-scripts allow-popups"
                       ></iframe>
+                    )}
+
+                    {message.showBank && message.bankData && (
+                      <iframe
+                        srcDoc={message.bankData}
+                        style={{
+                          width: "100%",
+                          height: "400px",
+                          border: "none",
+                          borderRadius: "10px",
+                          marginTop: "10px",
+                        }}
+                        sandbox="allow-same-origin"
+                      />
                     )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>

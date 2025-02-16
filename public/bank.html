@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Account Overview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1E1E2E;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: #252537;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background-color: #333;
+        }
+        .balance {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Your Bank Accounts</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Account Number</th>
+                <th>Product Type</th>
+                <th>Last Transaction</th>
+                <th>Balance</th>
+            </tr>
+            <tr>
+                <td>Home Saver</td>
+                <td>2534362</td>
+                <td>High Interest Super Saver</td>
+                <td>10 Sep 2024</td>
+                <td class="balance">$45,763.88</td>
+            </tr>
+            <tr>
+                <td>Daily Debit</td>
+                <td>53726762</td>
+                <td>Everyday Debit Online</td>
+                <td>15 Aug 2024</td>
+                <td class="balance">$5,422.26</td>
+            </tr>
+            <tr>
+                <td>Daily Debit</td>
+                <td>53530</td>
+                <td>Amex Platinum</td>
+                <td>29 Jul 2024</td>
+                <td class="balance" style="color: red;">- $842.33</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

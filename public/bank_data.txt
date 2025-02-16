@@ -1,0 +1,3 @@
+12345678,Home Saver,High Interest Super Saver,10 Sep 2024,45763.88
+87654321,Daily Debit,Everyday Debit Online,15 Aug 2024,5422.26
+11223344,Daily Debit,Amex Platinum,29 Jul 2024,-842.33

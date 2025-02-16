@@ -34,6 +34,13 @@ export class OpenAI_Api {
         // 如果需要显示日历，在消息发送后更新消息属性
         const botMessage = messages[messages.length - 1];
         if (botMessage) {
+          if (processedResponse.showMap) {
+            (botMessage as any).showMap = true;
+          }
+          if (processedResponse.showBank) {
+            (botMessage as any).showBank = true;
+            (botMessage as any).bankData = processedResponse.bankData;
+          }
           if (processedResponse.showCalculator) {
             (botMessage as any).showCalculator = true;
           }
