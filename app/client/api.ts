@@ -144,6 +144,22 @@ async function fetchBankData() {
 }
 
 export async function processGPTResponse(response: string) {
+  // 检查是否是 flight 响应
+  if (response.includes("._flight")) {
+    return {
+      content: response.replace("._flight", ""),
+      showFlight: true,
+      flightData: Locale.Store.Prompt.flightHTML_template,
+      showMap: false,
+      mapdata: "",
+      showBank: false,
+      bankData: "",
+      showCalendar: false,
+      calendarData: "",
+      showCalculator: false,
+    };
+  }
+
   const mapMatch = response.match(/(.+)\.\_map\_(.+)/);
   if (mapMatch) {
     const [_, content, locationString] = mapMatch;
@@ -166,6 +182,8 @@ export async function processGPTResponse(response: string) {
       showCalendar: false,
       calendarData: "",
       showCalculator: false,
+      showFlight: false,
+      flightData: "",
     };
   }
 
@@ -210,6 +228,8 @@ export async function processGPTResponse(response: string) {
       showCalendar: false,
       calendarData: "",
       showCalculator: false,
+      showFlight: false,
+      flightData: "",
     };
   }
 
@@ -226,6 +246,8 @@ export async function processGPTResponse(response: string) {
       showCalculator: false,
       calendarData: template ? template.replace(/TARGET_DATE/g, date) : "",
       calculatorData: "",
+      showFlight: false,
+      flightData: "",
     };
   }
 
@@ -243,6 +265,8 @@ export async function processGPTResponse(response: string) {
       showCalculator: true,
       calendarData: "",
       calculatorData: "",
+      showFlight: false,
+      flightData: "",
     };
   }
 
@@ -255,5 +279,7 @@ export async function processGPTResponse(response: string) {
     showCalculator: false,
     calendarData: "",
     calculatorData: "",
+    showFlight: false,
+    flightData: "",
   };
 }

@@ -574,6 +574,23 @@ Just ask your question naturally, and I'll provide the appropriate visualization
             </table>
         </body>
         </html>`,
+      flightHTML_template: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search</title>
+</head>
+<body>
+    <div
+      data-skyscanner-widget="FlightSearchWidget"
+      data-locale="en-US"
+      data-market="US"
+      data-currency="USD"
+    ></div>
+    <script src="https://widgets.skyscanner.net/widget-server/js/loader.js" async></script>
+</body>
+</html>`,
     },
   },
   Copy: {

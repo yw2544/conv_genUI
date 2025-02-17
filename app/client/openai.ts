@@ -5,6 +5,8 @@ interface RequestMessage {
   showCalendar?: boolean;
   calendarData?: any; // 或者使用更具体的类型
   showCalculator?: boolean;
+  showFlight?: boolean;
+  flightData?: string;
 }
 
 export class OpenAI_Api {
@@ -48,6 +50,10 @@ export class OpenAI_Api {
           if (processedResponse.showCalendar) {
             (botMessage as any).showCalendar = true;
             (botMessage as any).calendarData = processedResponse.calendarData;
+          }
+          if (processedResponse.showFlight) {
+            (botMessage as any).showFlight = true;
+            (botMessage as any).flightData = processedResponse.flightData;
           }
         }
       }

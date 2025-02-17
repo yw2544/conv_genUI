@@ -1301,7 +1301,7 @@ function _Chat() {
                     />
                     {message.showMap && (
                       <iframe
-                        key={message.mapdata}
+                        key={`map-${message.id}`}
                         srcDoc={message.mapdata}
                         style={{
                           width: "100%",
@@ -1313,8 +1313,23 @@ function _Chat() {
                         sandbox="allow-same-origin allow-scripts"
                       />
                     )}
+                    {message.showFlight && message.flightData && (
+                      <iframe
+                        key={`flight-${message.id}`}
+                        srcDoc={message.flightData}
+                        style={{
+                          width: "100%",
+                          height: "500px",
+                          border: "none",
+                          borderRadius: "10px",
+                          marginTop: "10px",
+                        }}
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
+                      />
+                    )}
                     {message.showCalendar && (
                       <iframe
+                        key={`calendar-${message.id}`}
                         width="100%"
                         height="300px"
                         srcDoc={message.calendarData}
@@ -1368,6 +1383,7 @@ function _Chat() {
 
                     {message.showBank && message.bankData && (
                       <iframe
+                        key={`bank-${message.id}`}
                         srcDoc={message.bankData}
                         style={{
                           width: "100%",

@@ -34,6 +34,8 @@ export type ChatMessage = RequestMessage & {
   showCalculator?: boolean;
   showBank?: boolean;
   bankData?: string;
+  showFlight?: boolean;
+  flightData?: string;
   stopReason?: ChatCompletionFinishReason;
   model?: Model;
   usage?: CompletionUsage;
@@ -330,6 +332,10 @@ Example1: "Where is New York?" -> xxxx(your own response)+"Let me show you New Y
 Example2: "Show me the route from New York to Los Angeles" -> xxxx(your own response)+"Let me show you the route from New York City to Los Angeles._map_New_York_City__Los_Angeles"
 Note that the first location is the starting point and the second location is the destination, so if from new york to los angeles, you should write New_York_City__Los_Angeles; if from los angeles to new york, you should write Los_Angeles__New_York_City
 
+5. For FLIGHT-related questions (flight search, booking, travel):
+Response format: "Let me help you search for flights._flight"
+Example: "I want to book a flight" -> xxxx(your own response)+"I'll help you search for available flights._flight"
+
 This is MANDATORY - you must use these EXACT formats for their respective types of questions.`,
         });
 
@@ -374,6 +380,10 @@ This is MANDATORY - you must use these EXACT formats for their respective types 
             if (processedResponse.showCalendar) {
               botMessage.showCalendar = processedResponse.showCalendar;
               botMessage.calendarData = processedResponse.calendarData;
+            }
+            if (processedResponse.showFlight) {
+              botMessage.showFlight = processedResponse.showFlight;
+              botMessage.flightData = processedResponse.flightData;
             }
 
             get().onNewMessage(botMessage, llm);
