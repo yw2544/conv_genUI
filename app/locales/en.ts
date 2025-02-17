@@ -336,37 +336,110 @@ Just ask your question naturally, and I'll provide the appropriate visualization
 
 Just ask your question naturally, and I'll provide the appropriate visualization!`,
       mapHTML_template: `<!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="utf-8">
-          <title>Route Map</title>
-          <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-          <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-      </head>
-      <body>
-          <div id="map" style="width: 100%; height: 100vh;"></div>
-          <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-          <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-          <script>
-              document.addEventListener("DOMContentLoaded", function() {
-                  var map = L.map("map").setView([35.8617, 104.1954], 5); // 设置中国视角
-      
-                  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                      attribution: "© OpenStreetMap contributors"
-                  }).addTo(map);
-      
-                  // 使用 Leaflet Routing Machine 画路线
-                  L.Routing.control({
-                      waypoints: [
-                          L.latLng(39.9042, 116.4074), // 北京
-                          L.latLng(31.2304, 121.4737)  // 上海
-                      ],
-                      routeWhileDragging: true
-                  }).addTo(map);
-              });
-          </script>
-      </body>
-      </html>`,
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Route Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+        .leaflet-routing-container {
+            position: fixed !important;
+            top: 10px !important;
+            left: 10px !important;
+            width: 200px !important;
+            max-height: 120px !important;
+            overflow-y: auto;
+            background-color: white;
+            padding: 6px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            font-size: 11px;
+            z-index: 1000;
+        }
+        .leaflet-routing-alt {
+            max-height: 100px !important;
+            overflow-y: auto;
+        }
+    </style>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+</head>
+<body>
+    <div id="map" style="width: 100%; height: 100vh;"></div>
+
+    <script>
+        var locations = LOCATIONS_ARRAY;
+
+        var map = L.map("map").setView([37.0902, -95.7129], 4);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors"
+        }).addTo(map);
+
+        function getCoordinates(locationName) {
+            return fetch(\`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&accept-language=en&q=\${locationName}\`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        return {
+                            lat: parseFloat(data[0].lat),
+                            lon: parseFloat(data[0].lon),
+                            displayName: data[0].display_name
+                        };
+                    } else {
+                        throw new Error(\`Location "\${locationName}" not found\`);
+                    }
+                });
+        }
+
+        async function loadMap() {
+            if (locations.length === 0) {
+                alert("No locations provided.");
+                return;
+            }
+
+            try {
+                let waypoints = [];
+                let markers = [];
+
+                for (let loc of locations) {
+                    let place = await getCoordinates(loc);
+                    waypoints.push(L.latLng(place.lat, place.lon));
+                    let marker = L.marker([place.lat, place.lon]).addTo(map)
+                        .bindPopup(place.displayName);
+                    markers.push(marker);
+                }
+
+                if (waypoints.length === 1) {
+                    map.setView(waypoints[0], 10);
+                    markers[0].openPopup();
+                } else {
+                    L.Routing.control({
+                        waypoints: waypoints,
+                        routeWhileDragging: true,
+                        lineOptions: {
+                            styles: [{color: '#2196F3', weight: 4}]
+                        },
+                        createMarker: function() { return null; },
+                        addWaypoints: false,
+                        draggableWaypoints: false,
+                        fitSelectedRoutes: true,
+                        showAlternatives: false
+                    }).addTo(map);
+
+                    var bounds = L.latLngBounds(waypoints);
+                    map.fitBounds(bounds);
+                }
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        loadMap();
+    </script>
+</body>
+</html>`,
       calendarHTML_template: `<!DOCTYPE html>
 <html>
 <head>

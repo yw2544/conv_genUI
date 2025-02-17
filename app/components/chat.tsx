@@ -1299,10 +1299,10 @@ function _Chat() {
                       parentRef={scrollRef}
                       defaultShow={i >= messages.length - 6}
                     />
-
                     {message.showMap && (
                       <iframe
-                        srcDoc={Locale.Store.Prompt.mapHTML_template}
+                        key={message.mapdata}
+                        srcDoc={message.mapdata}
                         style={{
                           width: "100%",
                           height: "400px",
@@ -1313,7 +1313,6 @@ function _Chat() {
                         sandbox="allow-same-origin allow-scripts"
                       />
                     )}
-
                     {message.showCalendar && (
                       <iframe
                         width="100%"

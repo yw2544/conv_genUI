@@ -309,12 +309,10 @@ export const useChatStore = createPersistStore(
             content +
             `
 
-
 CRITICAL INSTRUCTION: You MUST follow these response format rules:
 
 1. For BANK-related questions (balance, accounts, banking information):
 Response format: "Yes, I'll help you check your bank accounts. Let me show you your account details._bank"
-Example: "What's my balance?" -> "Yes, I'll help you check your bank accounts. Let me show you your account details._bank"
 
 2. For CALCULATOR/MATH questions (any numbers or calculations):
 Response format: Add "._calculator" at the end
@@ -324,9 +322,13 @@ Example: "What's 5+3?" -> "Let me calculate that for you: 5+3=8._calculator"
 Response format: Add "._calendar_YYYY-MM-DD" at the end
 Example: "Show me March 1st" -> "Here's your calendar for March 1st._calendar_2024-03-01"
 
-4. For MAP/LOCATION questions (places, directions):
-Response format: Add "._map" at the end
-Example: "Where is Paris?" -> "Let me show you Paris on the map._map"
+4. For any MAP/LOCATION relatedquestions:
+Single location: "Let me show you [Location] on the map._map_[Location]"
+Multiple locations: "Let me show you the route from [Location1] to [Location2]._map_[Location1]__[Location2]"
+Note: Use full city names, normal in your own response (e.g., New York City, Los Angeles) and with underscores at the end (e.g., New_York_City, Los_Angeles)
+Example1: "Where is New York?" -> xxxx(your own response)+"Let me show you New York City on the map._map_New_York_City"
+Example2: "Show me the route from New York to Los Angeles" -> xxxx(your own response)+"Let me show you the route from New York City to Los Angeles._map_New_York_City__Los_Angeles"
+Note that the first location is the starting point and the second location is the destination, so if from new york to los angeles, you should write New_York_City__Los_Angeles; if from los angeles to new york, you should write Los_Angeles__New_York_City
 
 This is MANDATORY - you must use these EXACT formats for their respective types of questions.`,
         });

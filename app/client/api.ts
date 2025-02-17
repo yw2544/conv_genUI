@@ -144,16 +144,23 @@ async function fetchBankData() {
 }
 
 export async function processGPTResponse(response: string) {
-  console.log("Processing response:", response);
-
-  // 检查是否是地图响应
-  const mapMatch = response.match(/(.+)\.\_map/);
+  const mapMatch = response.match(/(.+)\.\_map\_(.+)/);
   if (mapMatch) {
-    const [_, content] = mapMatch;
+    const [_, content, locationString] = mapMatch;
+    const locations = locationString
+      .split("__")
+      .map((loc) => loc.replace(/_/g, " "));
+
+    const template = Locale.Store.Prompt.mapHTML_template;
+    const mapHtml = template.replace(
+      "LOCATIONS_ARRAY",
+      JSON.stringify(locations),
+    );
+
     return {
       content,
       showMap: true,
-      mapdata: content,
+      mapdata: mapHtml,
       showBank: false,
       bankData: "",
       showCalendar: false,

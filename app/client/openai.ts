@@ -36,6 +36,7 @@ export class OpenAI_Api {
         if (botMessage) {
           if (processedResponse.showMap) {
             (botMessage as any).showMap = true;
+            (botMessage as any).mapdata = processedResponse.mapdata;
           }
           if (processedResponse.showBank) {
             (botMessage as any).showBank = true;
