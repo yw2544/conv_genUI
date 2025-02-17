@@ -395,35 +395,56 @@ export const useChatStore = createPersistStore(
                 FunctionAgent_system,
               );
               console.log("Function agent messages: ", Function_agent_Messages);
-              llm.chat({
-                messages: Function_agent_Messages,
-                config: {
-                  ...modelConfig,
-                  cache: useAppConfig.getState().cacheType,
-                  stream: false,
-                },
-                onAgent(message) {
-                  agentMessage.mapdata = message.replace("```", "`");
-                  console.log(
-                    "Map data of agentmessage in agent chat: ",
-                    agentMessage.mapdata,
-                  );
-                },
+              llm
+                .chat({
+                  messages: Function_agent_Messages,
+                  config: {
+                    ...modelConfig,
+                    cache: useAppConfig.getState().cacheType,
+                    stream: false,
+                  },
+                  if_agent: true,
+                  onAgent(message) {
+                    agentMessage.mapdata = message;
+                    console.log(
+                      "Map data of agentmessage in agent chat: ",
+                      agentMessage.mapdata,
+                    );
+                    botMessage.mapdata = agentMessage.mapdata;
+                  },
+                })
+                .then(() => {
+                  if (text_response) {
+                    botMessage.content = text_response;
+                    botMessage.showMap = need_map;
+                    botMessage.mapdata = agentMessage.mapdata;
+                    console.log(
+                      "Map data of agentmessage: ",
+                      agentMessage.mapdata,
+                    );
+                    console.log("Map data of botMessage: ", botMessage.mapdata);
+
+                    get().onNewMessage(botMessage, llm);
+                  }
+                  get().updateCurrentSession((session) => {
+                    session.isGenerating = false;
+                  });
+                });
+            }
+            if (!need_map) {
+              if (text_response) {
+                botMessage.content = text_response;
+                botMessage.showMap = need_map;
+                botMessage.mapdata = agentMessage.mapdata;
+                console.log("Map data of agentmessage: ", agentMessage.mapdata);
+                console.log("Map data of botMessage: ", botMessage.mapdata);
+
+                get().onNewMessage(botMessage, llm);
+              }
+              get().updateCurrentSession((session) => {
+                session.isGenerating = false;
               });
             }
-
-            if (text_response) {
-              botMessage.content = text_response;
-              botMessage.showMap = need_map;
-              botMessage.mapdata = agentMessage.mapdata;
-              console.log("Map data of agentmessage: ", agentMessage.mapdata);
-              console.log("Map data of botMessage: ", agentMessage.mapdata);
-
-              get().onNewMessage(botMessage, llm);
-            }
-            get().updateCurrentSession((session) => {
-              session.isGenerating = false;
-            });
           },
           onError(error) {
             const errorMessage =
