@@ -1299,7 +1299,7 @@ function _Chat() {
                       parentRef={scrollRef}
                       defaultShow={i >= messages.length - 6}
                     />
-                    {message.showMap && (
+                    {message.role === "assistant" && message.showMap && (
                       <iframe
                         key={`map-${message.id}`}
                         srcDoc={message.mapdata}
@@ -1313,21 +1313,23 @@ function _Chat() {
                         sandbox="allow-same-origin allow-scripts"
                       />
                     )}
-                    {message.showFlight && message.flightData && (
-                      <iframe
-                        key={`flight-${message.id}`}
-                        srcDoc={message.flightData}
-                        style={{
-                          width: "100%",
-                          height: "500px",
-                          border: "none",
-                          borderRadius: "10px",
-                          marginTop: "10px",
-                        }}
-                        sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
-                      />
-                    )}
-                    {message.showCalendar && (
+                    {message.role === "assistant" &&
+                      message.showFlight &&
+                      message.flightData && (
+                        <iframe
+                          key={`flight-${message.id}`}
+                          srcDoc={message.flightData}
+                          style={{
+                            width: "100%",
+                            height: "500px",
+                            border: "none",
+                            borderRadius: "10px",
+                            marginTop: "10px",
+                          }}
+                          sandbox="allow-same-origin allow-scripts allow-popups allow-modals allow-forms"
+                        />
+                      )}
+                    {message.role === "assistant" && message.showCalendar && (
                       <iframe
                         key={`calendar-${message.id}`}
                         width="100%"
@@ -1371,7 +1373,7 @@ function _Chat() {
                       </div>
                     )}
 
-                    {message.showCalculator && (
+                    {message.role === "assistant" && message.showCalculator && (
                       <iframe
                         src="https://www.calculator.net/scientific-calculator.html"
                         width="380"
@@ -1381,20 +1383,22 @@ function _Chat() {
                       ></iframe>
                     )}
 
-                    {message.showBank && message.bankData && (
-                      <iframe
-                        key={`bank-${message.id}`}
-                        srcDoc={message.bankData}
-                        style={{
-                          width: "100%",
-                          height: "400px",
-                          border: "none",
-                          borderRadius: "10px",
-                          marginTop: "10px",
-                        }}
-                        sandbox="allow-same-origin"
-                      />
-                    )}
+                    {message.role === "assistant" &&
+                      message.showBank &&
+                      message.bankData && (
+                        <iframe
+                          key={`bank-${message.id}`}
+                          srcDoc={message.bankData}
+                          style={{
+                            width: "100%",
+                            height: "400px",
+                            border: "none",
+                            borderRadius: "10px",
+                            marginTop: "10px",
+                          }}
+                          sandbox="allow-same-origin"
+                        />
+                      )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>
                     {message.role === "assistant" && message.usage && (

@@ -580,15 +580,115 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .flight { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .flight-header { font-weight: bold; margin-bottom: 10px; }
+        .outbound, .inbound { padding: 10px; margin: 5px 0; }
+        .loading { text-align: center; padding: 20px; }
+        .debug-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-    <div
-      data-skyscanner-widget="FlightSearchWidget"
-      data-locale="en-US"
-      data-market="US"
-      data-currency="USD"
-    ></div>
-    <script src="https://widgets.skyscanner.net/widget-server/js/loader.js" async></script>
+    <div class="debug-info">
+        <p>From: DEPARTURE_AIRPORT</p>
+        <p>To: ARRIVAL_AIRPORT</p>
+        <p>Date: DEPARTURE_DATE</p>
+    </div>
+    <h2>Flight Search Results</h2>
+    <div id="flights" class="loading">Loading flights...</div>
+    
+    <script>
+        async function fetchFlights() {
+            const url = \`https://booking-com15.p.rapidapi.com/api/v1/flights/searchFlights?fromId=DEPARTURE_AIRPORT&toId=ARRIVAL_AIRPORT&departDate=DEPARTURE_DATE&pageNo=1&adults=1&children=0%2C17&sort=BEST&cabinClass=ECONOMY&currency_code=USD\`;
+            
+            console.log('Fetching URL:', url);
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-host': 'booking-com15.p.rapidapi.com',
+                        'x-rapidapi-key': '1e7f0e1196msh045e3ea480c9f07p1302c9jsnd1307cce69f0'
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                displayFlights(data);
+            } catch (error) {
+                document.getElementById("flights").innerHTML = "Failed to load flights. Please try again later.<br>Error: " + error.message;
+                console.error("Error fetching flights:", error);
+            }
+        }
+
+        function displayFlights(data) {
+            const flightsDiv = document.getElementById("flights");
+            flightsDiv.innerHTML = '';
+            
+            if (!data.data || !data.data.flightOffers || data.data.flightOffers.length === 0) {
+                flightsDiv.innerHTML = "没有找到符合条件的航班。";
+                return;
+            }
+            
+            const summaryDiv = document.createElement("div");
+            summaryDiv.innerHTML = \`We have \${data.data.flightOffers.length} flights in total, displaying \${Math.min(10, data.data.flightOffers.length)} results\`;
+            flightsDiv.appendChild(summaryDiv);
+            
+            data.data.flightOffers.slice(0, 10).forEach((offer, index) => {
+                try {
+                    const flightDiv = document.createElement("div");
+                    flightDiv.className = "flight";
+                    
+                    if (!offer.segments || !offer.segments[0] || !offer.segments[0].legs || !offer.segments[0].legs[0]) {
+                        console.warn(\`航班索引 \${index} 数据不完整: \`, offer);
+                        return;
+                    }
+
+                    const segment = offer.segments[0]; // 获取第一个 segment
+                    const leg = segment.legs[0]; // 获取第一段航班信息
+                    const carrier = leg.carriersData?.[0] || { 
+                        name: '未知航司',
+                        logo: 'default-airline-logo.png'
+                    }; // 航空公司信息
+                    
+                    // 航班价格
+                    const price = offer.priceBreakdown?.total;
+                    const formattedPrice = price ? 
+                        \`\${price.currencyCode} \${price.units}.\${Math.round(price.nanos / 1e7)}\` : 
+                        'N/A';
+                    
+                    // 可用座位
+                    const seatsAvailable = offer.seatAvailability?.numberOfSeatsAvailable || "N/A";
+                    
+                    flightDiv.innerHTML = \`
+                        <img src="carrier.logo" onerror="this.src='default-airline-logo.png'">
+                        <div class="flight-info">
+                            <strong>\${carrier.name}</strong><br>
+                            Departure: \${leg.departureTime || 'N/A'} (\${segment.departureAirport?.cityName || 'N/A'})<br>
+                            Arrival: \${leg.arrivalTime || 'N/A'} (\${segment.arrivalAirport?.cityName || 'N/A'})<br>
+                            Price: \${formattedPrice}<br>
+                            Available Seats: \${seatsAvailable}
+                        </div>
+                    \`;
+                    
+                    flightsDiv.appendChild(flightDiv);
+                } catch (error) {
+                    console.error(\`显示航班信息时出错（航班索引 \${index}）：\`, error);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Starting flight search...');
+            fetchFlights();
+        });
+    </script>
 </body>
 </html>`,
     },

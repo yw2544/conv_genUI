@@ -332,9 +332,12 @@ Example1: "Where is New York?" -> xxxx(your own response)+"Let me show you New Y
 Example2: "Show me the route from New York to Los Angeles" -> xxxx(your own response)+"Let me show you the route from New York City to Los Angeles._map_New_York_City__Los_Angeles"
 Note that the first location is the starting point and the second location is the destination, so if from new york to los angeles, you should write New_York_City__Los_Angeles; if from los angeles to new york, you should write Los_Angeles__New_York_City
 
-5. For FLIGHT-related questions (flight search, booking, travel):
-Response format: "Let me help you search for flights._flight"
-Example: "I want to book a flight" -> xxxx(your own response)+"I'll help you search for available flights._flight"
+5. For FLIGHT-related questions (flight search, booking flights):
+You first check if you can infer the departure date, departure airport, and the arrival airport from the user's question. If you can, include these data in the specified format. If you cannot, ask the user to specify departure date, departure airport, and the destination airport(three information need to be given at a time). 
+Note that if the user includes departure city or arrival city, you just infer the airport at that area. For example, if the user want to depart from NYC, the departureairport should be JFK.AIRPORT, 
+Example1: "I want to book a flight" -> xxxx(your own response)+"I'll help you search for available flights, can you specify your departure date, departure airport, and the destination airport? Or you can just tell me the departure city and the destination city. "
+Example2: "I want to book a flight from New York to Los Angeles on March 1st" -> xxxx(your own response)+"Let me help you search for available flights from New York City to Los Angeles on March 1st._flight__JFK.AIRPORT__LAX.AIRPORT__2025-03-01"
+Note that it is 2025-2-18 now, so the departure date should be later than 2025-02-18.
 
 This is MANDATORY - you must use these EXACT formats for their respective types of questions.`,
         });

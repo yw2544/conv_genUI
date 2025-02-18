@@ -145,11 +145,21 @@ async function fetchBankData() {
 
 export async function processGPTResponse(response: string) {
   // 检查是否是 flight 响应
-  if (response.includes("._flight")) {
+  const flightMatch = response.match(
+    /(.+)\.\_flight\_\_(.+)\_\_(.+)\_\_(\d{4}-\d{2}-\d{2})/,
+  );
+  if (flightMatch) {
+    const [_, content, departureAirport, arrivalAirport, date] = flightMatch;
+    const template = Locale.Store.Prompt.flightHTML_template;
+    const flightHtml = template
+      .replace(/DEPARTURE_AIRPORT/g, departureAirport)
+      .replace(/ARRIVAL_AIRPORT/g, arrivalAirport)
+      .replace(/DEPARTURE_DATE/g, date);
+
     return {
-      content: response.replace("._flight", ""),
+      content,
       showFlight: true,
-      flightData: Locale.Store.Prompt.flightHTML_template,
+      flightData: flightHtml,
       showMap: false,
       mapdata: "",
       showBank: false,

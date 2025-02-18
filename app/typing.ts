@@ -13,3 +13,10 @@ export interface ChatImage {
   width: number;
   height: number;
 }
+
+export interface ChatMessage {
+  role: MessageRole;
+  content: string;
+  showFlight?: boolean;
+  flightData?: string;
+}
