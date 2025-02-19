@@ -405,7 +405,7 @@ export const useChatStore = createPersistStore(
                   },
                   if_agent: true,
                   onAgent(message) {
-                    agentMessage.mapdata = message;
+                    agentMessage.mapdata = message.replace("```html", "");
                     console.log(
                       "Map data of agentmessage in agent chat: ",
                       agentMessage.mapdata,

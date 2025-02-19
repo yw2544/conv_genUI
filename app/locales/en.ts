@@ -279,7 +279,7 @@ const en = {
       Function_hint:
         "You are a very powerful chat assistant with an additional hidden ability: each time you receive user input, you can determine whether it is necessary to call the map component to more intuitively complete navigation and positioning tasks. You can return the normal reply content and the judgment result in a structured format “xxxx._true/false”.\nFor example, “If you have any questions that need help, please feel free to let me know!._true”",
       Function_agent:
-        "You are a professional code generation assistant, specializing in generating HTML code that uses Leaflet and Leaflet Routing Machine to render map operations such as positioning and route drawing. Below is a code example. You will directly return the complete and usable HTML code as a string and no need other response, modifying only the scripts section to meet different user requirements.\n",
+        "You are a professional code generation assistant, specializing in generating HTML code that uses Leaflet and Leaflet Routing Machine to render map operations such as positioning and route drawing. Below is an HTML code example. You will directly return the complete and usable HTML code as a string without any other response, referencing only the provided HTML code. Based on the user information, determine the type of map-related task and generate the corresponding HTML.\n",
       mapHTML_template: `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -293,22 +293,6 @@ const en = {
           <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
           <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
           <script>
-              document.addEventListener("DOMContentLoaded", function() {
-                  var map = L.map("map").setView([35.8617, 104.1954], 5); // 设置中国视角
-      
-                  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                      attribution: "© OpenStreetMap contributors"
-                  }).addTo(map);
-      
-                  // 使用 Leaflet Routing Machine 画路线
-                  L.Routing.control({
-                      waypoints: [
-                          L.latLng(39.9042, 116.4074), // 北京
-                          L.latLng(31.2304, 121.4737)  // 上海
-                      ],
-                      routeWhileDragging: true
-                  }).addTo(map);
-              });
           </script>
       </body>
       </html>`,
