@@ -165,8 +165,15 @@ const useWebLLM = () => {
   const config = useAppConfig();
   const [webllm, setWebLLM] = useState<WebLLMApi | undefined>(undefined);
   const [isWebllmActive, setWebllmAlive] = useState(false);
-
   const isWebllmInitialized = useRef(false);
+  useEffect(() => {
+    if (!config.modelConfig.model || config.modelConfig.model === "") {
+      // **如果没有模型，默认设置为 gpt-4o**
+      config.selectModel("gpt-4o");
+      log.info("default model set to gpt-4o");
+      return;
+    }
+  }, [config.modelConfig.model]);
 
   // If service worker registration timeout, fall back to web worker
   const timeout = setTimeout(() => {

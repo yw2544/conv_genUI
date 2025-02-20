@@ -1,5 +1,6 @@
 "use client";
-
+import { useEffect, useState } from "react";
+import { useAppConfig } from "../store";
 import log from "loglevel";
 import { createContext } from "react";
 import {
@@ -27,6 +28,31 @@ import { OpenAI_Api } from "./openai";
 import { DEFAULT_MODELS } from "../constant";
 import { config } from "process";
 
+export function useWebLLMApi() {
+  const { modelConfig, selectModel } = useAppConfig();
+  const [webllmApi, setWebllmApi] = useState<WebLLMApi | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      log.warn("Skipping WebLLMApi initialization in SSR.");
+      return;
+    }
+
+    log.info("当前模型:", modelConfig.model);
+
+    // **如果当前 modelConfig.model 为空，设定默认模型 gpt-4o**
+    if (!modelConfig.model || modelConfig.model === "") {
+      selectModel("gpt-4o");
+      log.info("default model: gpt-4o");
+    }
+
+    // **初始化 WebLLMApi**
+    const webllmInstance = new WebLLMApi("webWorker");
+    setWebllmApi(webllmInstance);
+  }, [modelConfig.model]);
+
+  return webllmApi;
+}
 const KEEP_ALIVE_INTERVAL = 5_000;
 
 type ServiceWorkerWebLLMHandler = {
@@ -45,7 +71,7 @@ export class WebLLMApi implements LLMApi {
   private llmConfig?: LLMConfig;
   private initialized = false;
   private openai = new OpenAI_Api();
-  webllm: WebLLMHandler;
+  webllm!: WebLLMHandler;
 
   constructor(
     type: "serviceWorker" | "webWorker",
@@ -59,23 +85,28 @@ export class WebLLMApi implements LLMApi {
       logLevel,
     };
 
-    if (type === "serviceWorker") {
-      log.info("Create ServiceWorkerMLCEngine");
-      this.webllm = {
-        type: "serviceWorker",
-        engine: new ServiceWorkerMLCEngine(engineConfig, KEEP_ALIVE_INTERVAL),
-      };
+    if (typeof window !== "undefined") {
+      // ✅ 只在浏览器端执行
+      if (type === "serviceWorker") {
+        log.info("Create ServiceWorkerMLCEngine");
+        this.webllm = {
+          type: "serviceWorker",
+          engine: new ServiceWorkerMLCEngine(engineConfig, KEEP_ALIVE_INTERVAL),
+        };
+      } else {
+        log.info("Create WebWorkerMLCEngine");
+        this.webllm = {
+          type: "webWorker",
+          engine: new WebWorkerMLCEngine(
+            new Worker(new URL("../worker/web-worker.ts", import.meta.url), {
+              type: "module",
+            }),
+            engineConfig,
+          ),
+        };
+      }
     } else {
-      log.info("Create WebWorkerMLCEngine");
-      this.webllm = {
-        type: "webWorker",
-        engine: new WebWorkerMLCEngine(
-          new Worker(new URL("../worker/web-worker.ts", import.meta.url), {
-            type: "module",
-          }),
-          engineConfig,
-        ),
-      };
+      console.warn("Skipping WebWorkerMLCEngine initialization in SSR.");
     }
   }
 
@@ -118,6 +149,7 @@ export class WebLLMApi implements LLMApi {
   //   }
   async chat(options: ChatOptions): Promise<void> {
     if (options.config.model.startsWith("gpt")) {
+      console.log("🚀 use OpenAI:", options.config.model);
       try {
         await this.openai.chat(options);
       } catch (error) {

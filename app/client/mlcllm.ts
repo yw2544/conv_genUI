@@ -76,10 +76,10 @@ export class MlcLLMApi implements LLMApi {
             break;
           }
         }
-        options.onFinish(reply, stopReason, usage);
+        options.onFinish?.(reply, stopReason, usage);
       } else {
         const data = await response.json();
-        options.onFinish(
+        options.onFinish?.(
           data.choices[0].message.content,
           data.choices[0].finish_reason || undefined,
           data.usage || undefined,

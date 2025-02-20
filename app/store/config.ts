@@ -78,7 +78,7 @@ export type ConfigType = {
   modelConfig: ModelConfig;
 };
 
-const DEFAULT_MODEL = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
+const DEFAULT_MODEL = "gpt-4o";
 
 const DEFAULT_MODEL_CONFIG: ModelConfig = {
   model: DEFAULT_MODEL,
@@ -132,6 +132,7 @@ export const DEFAULT_CONFIG: ConfigType = {
 
   modelConfig: DEFAULT_MODEL_CONFIG,
 };
+console.log("default model:", DEFAULT_CONFIG.modelConfig.model);
 
 export type ChatConfig = typeof DEFAULT_CONFIG;
 
@@ -193,6 +194,8 @@ export const useAppConfig = createPersistStore(
     },
 
     setModels(models: ModelRecord[]) {
+      const defaultModel =
+        models.find((m) => m.name === "gpt-4o")?.name || models[0]?.name;
       if (models.some((m) => m.name === get().modelConfig.model)) {
         set((state) => ({
           ...state,
@@ -204,9 +207,10 @@ export const useAppConfig = createPersistStore(
           models,
           modelConfig: {
             ...state.modelConfig,
-            model: models[0].name,
+            model: defaultModel,
           },
         }));
+        console.log("set default model:", defaultModel);
       }
     },
 

@@ -1521,6 +1521,9 @@ const DEFAULT_MODEL_BASES: ModelRecord[] = [
 
 export const DEFAULT_MODELS: ModelRecord[] = DEFAULT_MODEL_BASES.filter(
   (model) => {
+    if (model.family === ModelFamily.OPENAI) {
+      return true;
+    }
     if (
       !prebuiltAppConfig.model_list.map((m) => m.model_id).includes(model.name)
     ) {
