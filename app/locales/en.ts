@@ -581,33 +581,101 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Search</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .flight { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
-        .flight-header { font-weight: bold; margin-bottom: 10px; }
-        .outbound, .inbound { padding: 10px; margin: 5px 0; }
-        .loading { text-align: center; padding: 20px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 0px;
+            background: #f8fafc;
+            color: #1a1f36;
+        }
+        .flight { 
+            border: 1px solid rgba(65, 84, 255, 0.05);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .flight:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .flight-info {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            align-items: left;
+            justify-items: left;
+            gap: 15px;
+        }
+        .airline-name {
+            font-weight: 600;
+            color: #000000;
+            grid-column: 1 / -1;
+        }
+        .time-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            grid-column: 1 / 4;
+        }
+        .time {
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .city {
+            color: #697386;
+            font-size: 13px;
+        }
+        .price {
+            text-align: right;
+            font-weight: 500;
+            color: #4CAF50;
+            grid-column: 4;
+        }
+        .seats {
+            color: #697386;
+            font-size: 13px;
+            grid-column: 1 / -1;
+        }
         .debug-info {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            padding: 8px;
+            background: rgba(65, 84, 255, 0.03);
+            border-radius: 12px;
+            font-size: 14px;
+            color: #697386;
+        }
+        .summary {
+            margin-bottom: 8px;
+            color: #697386;
+            font-size: 14px;
             padding: 10px;
-            background: #f0f0f0;
-            border-radius: 4px;
+        }
+        h2 {
+            color: #1a1f36;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #697386;
+            font-size: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="debug-info">
-        <p>From: DEPARTURE_AIRPORT</p>
-        <p>To: ARRIVAL_AIRPORT</p>
-        <p>Date: DEPARTURE_DATE</p>
-    </div>
+    
     <h2>Flight Search Results</h2>
-    <div id="flights" class="loading">Loading flights...</div>
+    <div id="flights" class="loading">Searching for the best flights...</div>
     
     <script>
         async function fetchFlights() {
             const url = \`https://booking-com15.p.rapidapi.com/api/v1/flights/searchFlights?fromId=DEPARTURE_AIRPORT&toId=ARRIVAL_AIRPORT&departDate=DEPARTURE_DATE&pageNo=1&adults=1&children=0%2C17&sort=BEST&cabinClass=ECONOMY&currency_code=USD\`;
-            
-            console.log('Fetching URL:', url);
             
             try {
                 const response = await fetch(url, {
@@ -619,11 +687,9 @@ Just ask your question naturally, and I'll provide the appropriate visualization
                 });
                 
                 const data = await response.json();
-                console.log('API Response:', data);
                 displayFlights(data);
             } catch (error) {
-                document.getElementById("flights").innerHTML = "Failed to load flights. Please try again later.<br>Error: " + error.message;
-                console.error("Error fetching flights:", error);
+                document.getElementById("flights").innerHTML = "Unable to load flights at this time. Please try again later.<br>Error: " + error.message;
             }
         }
 
@@ -632,11 +698,12 @@ Just ask your question naturally, and I'll provide the appropriate visualization
             flightsDiv.innerHTML = '';
             
             if (!data.data || !data.data.flightOffers || data.data.flightOffers.length === 0) {
-                flightsDiv.innerHTML = "没有找到符合条件的航班。";
+                flightsDiv.innerHTML = "No flights found matching your criteria.";
                 return;
             }
             
             const summaryDiv = document.createElement("div");
+            summaryDiv.className = "summary";
             summaryDiv.innerHTML = \`We have \${data.data.flightOffers.length} flights in total, displaying \${Math.min(10, data.data.flightOffers.length)} results\`;
             flightsDiv.appendChild(summaryDiv);
             
@@ -646,40 +713,52 @@ Just ask your question naturally, and I'll provide the appropriate visualization
                     flightDiv.className = "flight";
                     
                     if (!offer.segments || !offer.segments[0] || !offer.segments[0].legs || !offer.segments[0].legs[0]) {
-                        console.warn(\`航班索引 \${index} 数据不完整: \`, offer);
+                        console.warn(\`Flight index \${index} data incomplete: \`, offer);
                         return;
                     }
 
-                    const segment = offer.segments[0]; // 获取第一个 segment
-                    const leg = segment.legs[0]; // 获取第一段航班信息
+                    const segment = offer.segments[0];
+                    const leg = segment.legs[0];
                     const carrier = leg.carriersData?.[0] || { 
-                        name: '未知航司',
+                        name: 'Unknown Airline',
                         logo: 'default-airline-logo.png'
-                    }; // 航空公司信息
+                    };
                     
-                    // 航班价格
                     const price = offer.priceBreakdown?.total;
                     const formattedPrice = price ? 
                         \`\${price.currencyCode} \${price.units}.\${Math.round(price.nanos / 1e7)}\` : 
                         'N/A';
                     
-                    // 可用座位
-                    const seatsAvailable = offer.seatAvailability?.numberOfSeatsAvailable || "N/A";
+                    const seatsAvailable = offer.seatAvailability?.numberOfSeatsAvailable || "Unknown";
                     
                     flightDiv.innerHTML = \`
-                        <img src="carrier.logo" onerror="this.src='default-airline-logo.png'">
                         <div class="flight-info">
-                            <strong>\${carrier.name}</strong><br>
-                            Departure: \${leg.departureTime || 'N/A'} (\${segment.departureAirport?.cityName || 'N/A'})<br>
-                            Arrival: \${leg.arrivalTime || 'N/A'} (\${segment.arrivalAirport?.cityName || 'N/A'})<br>
-                            Price: \${formattedPrice}<br>
-                            Available Seats: \${seatsAvailable}
+                            <div class="airline-name">
+                                <img src= \${carrier.logo} 
+                                     alt= \${carrier.name} 
+                                     onerror="this.src='default-airline-logo.png'" 
+                                     style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
+                                    <span>\${carrier.name}</span>
+                            </div>
+                            <div class="time-section">
+                                <div>
+                                    <div class="time">\${leg.departureTime || 'N/A'}</div>
+                                    <div class="city">\${segment.departureAirport?.cityName || 'N/A'}</div>
+                                </div>
+                                <span>✈️</span>
+                                <div>
+                                    <div class="time">\${leg.arrivalTime || 'N/A'}</div>
+                                    <div class="city">\${segment.arrivalAirport?.cityName || 'N/A'}</div>
+                                </div>
+                            </div>
+                            <div class="price">\${formattedPrice}</div>
+                            <div class="seats">Available Seats: \${seatsAvailable}</div>
                         </div>
                     \`;
                     
                     flightsDiv.appendChild(flightDiv);
                 } catch (error) {
-                    console.error(\`显示航班信息时出错（航班索引 \${index}）：\`, error);
+                    console.error(\`Error displaying flight (index \${index}): \`, error);
                 }
             });
         }
