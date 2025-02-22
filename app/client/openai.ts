@@ -55,6 +55,10 @@ export class OpenAI_Api {
             (botMessage as any).showFlight = true;
             (botMessage as any).flightData = processedResponse.flightData;
           }
+          if (processedResponse.showHotel) {
+            (botMessage as any).showHotel = true;
+            (botMessage as any).hotelData = processedResponse.hotelData;
+          }
         }
       }
       options.if_agent && options.onAgent?.(reply);

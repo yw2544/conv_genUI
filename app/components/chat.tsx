@@ -566,7 +566,11 @@ export function DeleteImageButton(props: { deleteImage: () => void }) {
 }
 
 function _Chat() {
-  type RenderMessage = ChatMessage & { preview?: boolean };
+  type RenderMessage = ChatMessage & {
+    preview?: boolean;
+    showHotel?: boolean;
+    hotelData?: string;
+  };
 
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
@@ -652,23 +656,27 @@ function _Chat() {
 
   // only search prompts when user input is short
   const SEARCH_TEXT_LIMIT = 30;
-  const onInput = (text: string) => {
-    setUserInput(text);
-    const n = text.trim().length;
+  const onInput = useDebouncedCallback(
+    (text: string) => {
+      setUserInput(text);
+      const n = text.trim().length;
 
-    // clear search results
-    if (n === 0) {
-      setPromptHints([]);
-    } else if (text.startsWith(ChatCommandPrefix)) {
-      setPromptHints(chatCommands.search(text));
-    } else if (!config.disablePromptHint && n < SEARCH_TEXT_LIMIT) {
-      // check if need to trigger auto completion
-      if (text.startsWith("/")) {
-        let searchText = text.slice(1);
-        onSearch(searchText);
+      // clear search results
+      if (n === 0) {
+        setPromptHints([]);
+      } else if (text.startsWith(ChatCommandPrefix)) {
+        setPromptHints(chatCommands.search(text));
+      } else if (!config.disablePromptHint && n < SEARCH_TEXT_LIMIT) {
+        // check if need to trigger auto completion
+        if (text.startsWith("/")) {
+          let searchText = text.slice(1);
+          onSearch(searchText);
+        }
       }
-    }
-  };
+    },
+    100,
+    { leading: true, trailing: true },
+  );
 
   const onSubmit = (userInput: string) => {
     if (userInput.trim() === "") return;
@@ -936,19 +944,12 @@ function _Chat() {
 
   // remember unfinished input
   useEffect(() => {
-    // try to load from local storage
     const key = UNFINISHED_INPUT(session.id);
     const mayBeUnfinishedInput = localStorage.getItem(key);
     if (mayBeUnfinishedInput && userInput.length === 0) {
       setUserInput(mayBeUnfinishedInput);
       localStorage.removeItem(key);
     }
-
-    const dom = inputRef.current;
-    return () => {
-      localStorage.setItem(key, dom?.value ?? "");
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePaste = useCallback(
@@ -1399,6 +1400,23 @@ function _Chat() {
                           sandbox="allow-same-origin"
                         />
                       )}
+
+                    {message.role === "assistant" &&
+                      message.showHotel &&
+                      message.hotelData && (
+                        <iframe
+                          key={`hotel-${message.id}`}
+                          srcDoc={message.hotelData}
+                          style={{
+                            width: "100%",
+                            height: "600px",
+                            border: "none",
+                            borderRadius: "10px",
+                            marginTop: "10px",
+                          }}
+                          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                        />
+                      )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>
                     {message.role === "assistant" && message.usage && (
@@ -1465,17 +1483,20 @@ function _Chat() {
             ref={inputRef}
             className={styles["chat-input"]}
             placeholder={Locale.Chat.Input(submitKey)}
-            onInput={(e) => onInput(e.currentTarget.value)}
+            onInput={(e) => {
+              e.preventDefault();
+              setUserInput(e.currentTarget.value);
+            }}
             value={userInput}
-            onKeyDown={onInputKeyDown}
-            onFocus={scrollToBottom}
-            onClick={scrollToBottom}
-            onPaste={handlePaste}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSubmit(userInput);
+              }
+            }}
             rows={inputRows}
             autoFocus={autoFocus}
-            style={{
-              fontSize: config.fontSize,
-            }}
           />
           {attachImages.length != 0 && (
             <div className={styles["attach-images"]}>

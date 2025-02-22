@@ -144,6 +144,34 @@ async function fetchBankData() {
 }
 
 export async function processGPTResponse(response: string) {
+  // 检查是否是 hotel 响应 - 把 hotel 匹配放在最前面
+  const hotelMatch = response.match(
+    /(.+)\.\_hotel\_\_(\d{4}-\d{2}-\d{2})\_\_(\d{4}-\d{2}-\d{2})\_\_(.+)/,
+  );
+  if (hotelMatch) {
+    const [_, content, checkIn, checkOut, location] = hotelMatch;
+    const template = Locale.Store.Prompt.hotelHTML_template;
+    const hotelHtml = template
+      .replace(/CHECK_IN_DATE/g, checkIn)
+      .replace(/CHECK_OUT_DATE/g, checkOut)
+      .replace(/LOCATION/g, location.replace(/_/g, " "));
+
+    return {
+      content,
+      showHotel: true,
+      hotelData: hotelHtml,
+      showFlight: false,
+      flightData: "",
+      showMap: false,
+      mapdata: "",
+      showBank: false,
+      bankData: "",
+      showCalendar: false,
+      calendarData: "",
+      showCalculator: false,
+    };
+  }
+
   // 检查是否是 flight 响应
   const flightMatch = response.match(
     /(.+)\.\_flight\_\_(.+)\_\_(.+)\_\_(\d{4}-\d{2}-\d{2})/,
@@ -167,6 +195,8 @@ export async function processGPTResponse(response: string) {
       showCalendar: false,
       calendarData: "",
       showCalculator: false,
+      showHotel: false,
+      hotelData: "",
     };
   }
 
@@ -194,6 +224,8 @@ export async function processGPTResponse(response: string) {
       showCalculator: false,
       showFlight: false,
       flightData: "",
+      showHotel: false,
+      hotelData: "",
     };
   }
 
@@ -240,6 +272,8 @@ export async function processGPTResponse(response: string) {
       showCalculator: false,
       showFlight: false,
       flightData: "",
+      showHotel: false,
+      hotelData: "",
     };
   }
 
@@ -258,6 +292,8 @@ export async function processGPTResponse(response: string) {
       calculatorData: "",
       showFlight: false,
       flightData: "",
+      showHotel: false,
+      hotelData: "",
     };
   }
 
@@ -277,6 +313,8 @@ export async function processGPTResponse(response: string) {
       calculatorData: "",
       showFlight: false,
       flightData: "",
+      showHotel: false,
+      hotelData: "",
     };
   }
 
@@ -291,5 +329,7 @@ export async function processGPTResponse(response: string) {
     calculatorData: "",
     showFlight: false,
     flightData: "",
+    showHotel: false,
+    hotelData: "",
   };
 }

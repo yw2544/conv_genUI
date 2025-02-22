@@ -669,45 +669,60 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     </style>
 </head>
 <body>
-    
     <h2>Flight Search Results</h2>
     <div id="flights" class="loading">Searching for the best flights...</div>
     
     <script>
+        const API_KEY = "73832acacdmsh912a5ba144580abp1e7c32jsn8690baeaba73";
+        
+        // 添加缓存键
+        const CACHE_KEY = 'flightSearchResults_DEPARTURE_AIRPORT_ARRIVAL_AIRPORT_DEPARTURE_DATE';
+        
         async function fetchFlights() {
-            const url = \`https://booking-com15.p.rapidapi.com/api/v1/flights/searchFlights?fromId=DEPARTURE_AIRPORT&toId=ARRIVAL_AIRPORT&departDate=DEPARTURE_DATE&pageNo=1&adults=1&children=0%2C17&sort=BEST&cabinClass=ECONOMY&currency_code=USD\`;
-            
+            // 检查缓存
+            const cachedData = sessionStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                renderFlights(JSON.parse(cachedData));
+                return;
+            }
+
             try {
-                const response = await fetch(url, {
+                const response = await fetch(\`https://booking-com15.p.rapidapi.com/api/v1/flights/searchFlights?fromId=DEPARTURE_AIRPORT&toId=ARRIVAL_AIRPORT&departDate=DEPARTURE_DATE&pageNo=1&adults=1&children=0%2C17&sort=BEST&cabinClass=ECONOMY&currency_code=USD\`, {
                     method: 'GET',
                     headers: {
                         'x-rapidapi-host': 'booking-com15.p.rapidapi.com',
-                        'x-rapidapi-key': '1e7f0e1196msh045e3ea480c9f07p1302c9jsnd1307cce69f0'
+                        'x-rapidapi-key': API_KEY
                     }
                 });
                 
                 const data = await response.json();
-                displayFlights(data);
+                
+                // 存储到 sessionStorage
+                if (data.data?.flightOffers) {
+                    sessionStorage.setItem(CACHE_KEY, JSON.stringify(data.data.flightOffers));
+                }
+                
+                renderFlights(data.data?.flightOffers || []);
             } catch (error) {
                 document.getElementById("flights").innerHTML = "Unable to load flights at this time. Please try again later.<br>Error: " + error.message;
             }
         }
 
-        function displayFlights(data) {
+        function renderFlights(flightOffers) {
             const flightsDiv = document.getElementById("flights");
             flightsDiv.innerHTML = '';
             
-            if (!data.data || !data.data.flightOffers || data.data.flightOffers.length === 0) {
+            if (!flightOffers || flightOffers.length === 0) {
                 flightsDiv.innerHTML = "No flights found matching your criteria.";
                 return;
             }
             
             const summaryDiv = document.createElement("div");
             summaryDiv.className = "summary";
-            summaryDiv.innerHTML = \`We have \${data.data.flightOffers.length} flights in total, displaying \${Math.min(10, data.data.flightOffers.length)} results\`;
+            summaryDiv.innerHTML = \`We have \${flightOffers.length} flights in total, displaying \${Math.min(10, flightOffers.length)} results\`;
             flightsDiv.appendChild(summaryDiv);
             
-            data.data.flightOffers.slice(0, 10).forEach((offer, index) => {
+            flightOffers.slice(0, 10).forEach((offer, index) => {
                 try {
                     const flightDiv = document.createElement("div");
                     flightDiv.className = "flight";
@@ -734,11 +749,11 @@ Just ask your question naturally, and I'll provide the appropriate visualization
                     flightDiv.innerHTML = \`
                         <div class="flight-info">
                             <div class="airline-name">
-                                <img src= \${carrier.logo} 
-                                     alt= \${carrier.name} 
+                                <img src="\${carrier.logo}" 
+                                     alt="\${carrier.name}" 
                                      onerror="this.src='default-airline-logo.png'" 
                                      style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
-                                    <span>\${carrier.name}</span>
+                                <span>\${carrier.name}</span>
                             </div>
                             <div class="time-section">
                                 <div>
@@ -763,10 +778,184 @@ Just ask your question naturally, and I'll provide the appropriate visualization
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Starting flight search...');
+        // 只在页面首次加载时执行一次
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchFlights);
+        } else {
             fetchFlights();
-        });
+        }
+    </script>
+</body>
+</html>`,
+      hotelHTML_template: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Search</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f8fafc;
+            color: #1a1f36;
+        }
+        .search-details {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .hotel-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .hotel-card {
+            border: 1px solid rgba(65, 84, 255, 0.1);
+            padding: 16px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 12px;
+        }
+        .hotel-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .hotel-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .hotel-info {
+            flex-grow: 1;
+        }
+        .hotel-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .hotel-price {
+            font-size: 16px;
+            font-weight: 500;
+            color: #10b981;
+            margin-top: 8px;
+        }
+        .hotel-review {
+            font-size: 14px;
+            color: #f59e0b;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-details">
+        <h3>Search Details</h3>
+        <p>Location: <span id="location">LOCATION</span></p>
+        <p>Check-in: <span id="checkin">CHECK_IN_DATE</span></p>
+        <p>Check-out: <span id="checkout">CHECK_OUT_DATE</span></p>
+    </div>
+    
+    <h2>Available Hotels</h2>
+    <div id="hotels" class="hotel-list">Searching for hotels...</div>
+
+    <script>
+        const API_KEY = "73832acacdmsh912a5ba144580abp1e7c32jsn8690baeaba73";
+        
+      
+        const CACHE_KEY = 'hotelSearchResults_LOCATION_CHECK_IN_DATE_CHECK_OUT_DATE';
+        
+        async function fetchHotels() {
+            
+            const cachedData = sessionStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                renderHotels(JSON.parse(cachedData));
+                return;
+            }
+
+            try {
+                const destResponse = await fetch(\`https://booking-com15.p.rapidapi.com/api/v1/hotels/searchDestination?query=LOCATION\`, {
+                    method: "GET",
+                    headers: {
+                        "x-rapidapi-host": "booking-com15.p.rapidapi.com",
+                        "x-rapidapi-key": API_KEY
+                    }
+                });
+                const destData = await destResponse.json();
+                if (!destData.data || destData.data.length === 0) {
+                    document.getElementById("hotels").innerHTML = "No destinations found.";
+                    return;
+                }
+
+                const dest_id = destData.data[0].dest_id;
+                const dest_type = destData.data[0].dest_type;
+
+                const hotelResponse = await fetch(\`https://booking-com15.p.rapidapi.com/api/v1/hotels/searchHotels?dest_id=\${dest_id}&search_type=\${dest_type}&arrival_date=CHECK_IN_DATE&departure_date=CHECK_OUT_DATE&adults=1&children_age=0%2C17&room_qty=1&page_number=1&units=metric&temperature_unit=c&languagecode=en-us&currency_code=USD\`, {
+                    method: "GET",
+                    headers: {
+                        "x-rapidapi-host": "booking-com15.p.rapidapi.com",
+                        "x-rapidapi-key": API_KEY
+                    }
+                });
+
+                const hotelData = await hotelResponse.json();
+                if (!hotelData.data || !hotelData.data.hotels || hotelData.data.hotels.length === 0) {
+                    document.getElementById("hotels").innerHTML = "No hotels found.";
+                    return;
+                }
+
+                // 存储到 sessionStorage
+                if (hotelData.data?.hotels) {
+                    sessionStorage.setItem(CACHE_KEY, JSON.stringify(hotelData.data.hotels));
+                }
+                
+                renderHotels(hotelData.data.hotels);
+            } catch (error) {
+                console.error("⛔ Error fetching hotels:", error);
+                document.getElementById("hotels").innerHTML = "Failed to fetch hotels.";
+            }
+        }
+
+        function renderHotels(hotels) {
+            const hotelsDiv = document.getElementById("hotels");
+            hotelsDiv.innerHTML = "";
+
+            hotels.slice(0, 10).forEach(hotel => {
+                try {
+                    const hotelCard = document.createElement("div");
+                    hotelCard.className = "hotel-card";
+
+                    const hotelImage = hotel.property.photoUrls?.[0] || "https://via.placeholder.com/100";
+                    const hotelName = hotel.property.name || "Unknown Hotel";
+                    const hotelPrice = hotel.property.priceBreakdown?.grossPrice?.value + " " + hotel.property.priceBreakdown?.grossPrice?.currency || "Price not available";
+                    const hotelReview = hotel.property.reviewScoreWord || "No reviews";
+
+                    hotelCard.innerHTML = \`
+                        <img class="hotel-image" src="\${hotelImage}" alt="\${hotelName}">
+                        <div class="hotel-info">
+                            <div class="hotel-name">\${hotelName}</div>
+                            <div class="hotel-price">\${hotelPrice}</div>
+                            <div class="hotel-review">Review: \${hotelReview}</div>
+                        </div>
+                    \`;
+
+                    hotelsDiv.appendChild(hotelCard);
+                } catch (error) {
+                    console.error("⛔ Error rendering hotel:", error);
+                }
+            });
+        }
+
+        // 只在页面首次加载时执行一次
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchHotels);
+        } else {
+            fetchHotels();
+        }
     </script>
 </body>
 </html>`,

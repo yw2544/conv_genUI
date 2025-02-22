@@ -318,7 +318,7 @@ Response format: "Yes, I'll help you check your bank accounts. Let me show you y
 
 2. For CALCULATOR/MATH questions (any numbers or calculations):
 Response format: Add "._calculator" at the end
-Example: "What's 5+3?" -> "Let me calculate that for you: 5+3=8._calculator"
+Example: "What's 5+3?" -> xxxx(your own response)+"Let me calculate that for you: 5+3=8._calculator"
 
 3. For CALENDAR/DATE questions (scheduling, dates, time):
 Response format: Add "._calendar_YYYY-MM-DD" at the end
@@ -337,9 +337,17 @@ You first check if you can infer the departure date, departure airport, and the 
 Note that if the user includes departure city or arrival city, you just infer the airport at that area. For example, if the user want to depart from NYC, the departureairport should be JFK.AIRPORT, 
 Example1: "I want to book a flight" -> xxxx(your own response)+"I'll help you search for available flights, can you specify your departure date, departure airport, and the destination airport? Or you can just tell me the departure city and the destination city. "
 Example2: "I want to book a flight from New York to Los Angeles on March 1st" -> xxxx(your own response)+"Let me help you search for available flights from New York City to Los Angeles on March 1st._flight__JFK.AIRPORT__LAX.AIRPORT__2025-03-01"
-Note that it is 2025-2-18 now, so the departure date should be later than 2025-02-18.
+Note that it is 2025-2-21 now, so the departure date should be later than 2025-02-18.
 
-This is MANDATORY - you must use these EXACT formats for their respective types of questions.`,
+6. For HOTEL-related questions (hotel search, booking hotels):
+You first check if you can infer the check-in date (arrival date), check-out date (departure date), and the city or region name from the user's question.
+If you can, include these data in the specified format.
+If you cannot, ask the user to specify all three pieces of information (check-in date, check-out date, and the destination city or region) at once.
+Example1: "I want to book a hotel." -> xxxx(your own response)+"I'll help you search for available hotels, can you specify your check-in date, check-out date, and the destination city or region?
+Example2: "Find me a hotel in NYC from April 20th to April 22nd." -> xxxx(your own response)+"I'll help you search for available hotels in New York City from April 20th to April 22nd._hotel__2025-04-20__2025-04-22__New_York_City"
+Note that it is 2025-2-21 now, so the checkin/out date should be later than 2025-02-18. **the default year is 2025**
+
+This is MANDATORY - you must use these EXACT formats for their respective types of questions. It the latest question is not related to these types of questions, you should not add any format.`,
         });
 
         const botMessage: ChatMessage = createMessage({
@@ -371,11 +379,14 @@ This is MANDATORY - you must use these EXACT formats for their respective types 
           },
           async onFinish(message, stopReason, usage) {
             botMessage.streaming = false;
-            botMessage.content = message;
+            const processedResponse = await processGPTResponse(message);
+
+            // 更新 botMessage 的内容为处理后的响应
+            botMessage.content = processedResponse.content;
             botMessage.usage = usage;
             botMessage.stopReason = stopReason;
 
-            const processedResponse = await processGPTResponse(message);
+            // 添加其他功能的状态
             if (processedResponse.showBank) {
               botMessage.showBank = processedResponse.showBank;
               botMessage.bankData = processedResponse.bankData;
@@ -428,20 +439,7 @@ This is MANDATORY - you must use these EXACT formats for their respective types 
           if (msg.role === "user") {
             return {
               ...msg,
-              content:
-                msg.content +
-                `
-
-<!-- hidden prompt -->
-CRITICAL INSTRUCTION: If your response involves ANY numbers, math, or calculations, you MUST append "._calculator" at the end of your response.
-
-Examples:
-"1 plus 1 equals 2! Let me show you how to calculate this._calculator"
-"Sure! 5 multiplied by 3 is 15. I can help you verify this calculation._calculator"
-"Let's solve this equation step by step! First, subtract 5 from both sides..._calculator"
-
-This is MANDATORY - never forget the "._calculator" suffix for ANY response involving numbers.
-<!-- end hidden prompt -->`,
+              content: msg.content,
             };
           }
           return msg;
