@@ -950,7 +950,7 @@ Just ask your question naturally, and I'll provide the appropriate visualization
             });
         }
 
-        // 只在页面首次加载时执行一次
+        
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', fetchHotels);
         } else {

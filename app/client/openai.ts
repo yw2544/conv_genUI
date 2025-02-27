@@ -3,7 +3,7 @@ import { processGPTResponse } from "./api";
 
 interface RequestMessage {
   showCalendar?: boolean;
-  calendarData?: any; // 或者使用更具体的类型
+  calendarData?: any;
   showCalculator?: boolean;
   showFlight?: boolean;
   flightData?: string;
@@ -33,7 +33,6 @@ export class OpenAI_Api {
           data.usage,
         );
 
-        // 如果需要显示日历，在消息发送后更新消息属性
         const botMessage = messages[messages.length - 1];
         if (botMessage) {
           if (processedResponse.showMap) {
