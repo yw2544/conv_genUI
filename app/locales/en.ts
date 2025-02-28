@@ -959,6 +959,97 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     </script>
 </body>
 </html>`,
+      stockHTML_template: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a; /* 深色背景 */
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 900px;
+            background: #2a2a2a; /* 深色容器背景 */
+            padding: 40px; /* 增加padding，避免图例与表格重叠 */
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <h2>STOCK_SYMBOL Stock Price Trend 📈 (STOCK_INTERVAL)</h2>
+        <canvas id="stockChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('stockChart').getContext('2d');
+
+        // 股票数据 (可替换为API数据)
+        const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const stockPrices = [150, 155, 160, 162, 158, 165, 170]; // 股票价格
+
+        // 创建绿色渐变填充
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "rgba(0, 255, 127, 0.7)"); // 深绿
+        gradient.addColorStop(1, "rgba(0, 255, 127, 0.2)"); // 透明绿色渐变
+
+        const stockData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Stock Price ($)",
+                    data: stockPrices,
+                    borderColor: "rgba(0, 255, 127, 1)",
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointBackgroundColor: "lime",
+                    pointRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        };
+
+        new Chart(ctx, {
+            type: "line",
+            data: stockData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true }
+                },
+                layout: {
+                    padding: {
+                        top: 50, // 增加上方间距
+                        bottom: 20
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: Math.min(...stockPrices) - 5,
+                        suggestedMax: Math.max(...stockPrices) + 5
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>`,
     },
   },
   Copy: {

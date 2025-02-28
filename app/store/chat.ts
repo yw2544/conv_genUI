@@ -36,6 +36,10 @@ export type ChatMessage = RequestMessage & {
   bankData?: string;
   showFlight?: boolean;
   flightData?: string;
+  showStock?: boolean;
+  stockData?: string;
+  showWeather?: boolean;
+  weatherData?: string;
   stopReason?: ChatCompletionFinishReason;
   model?: Model;
   usage?: CompletionUsage;
@@ -346,6 +350,20 @@ If you cannot, ask the user to specify all three pieces of information (check-in
 Example1: "I want to book a hotel." -> xxxx(your own response)+"I'll help you search for available hotels, can you specify your check-in date, check-out date, and the destination city or region?
 Example2: "Find me a hotel in NYC from April 20th to April 22nd." -> xxxx(your own response)+"I'll help you search for available hotels in New York City from April 20th to April 22nd._hotel__2025-04-20__2025-04-22__New_York_City"
 Note that it is 2025-2-21 now, so the checkin/out date should be later than 2025-02-18. **the default year is 2025**
+
+7. For STOCK-related questions (stock prices, market information):
+Response format: Add "._stock_SYMBOL_INTERVAL" at the end
+Note: Use official stock symbols (e.g., AAPL for Apple, MSFT for Microsoft)
+For interval, choose from: 5m, 15m, 30m, 1h, 1d, 1wk, 1mo, 3mo based on the user's question (default is 1d); the interval means we get one datapoint per interval. So we need to change the interval depending on the user's question: now(15m),very recently(1h), past week/default(1d), past year(1mo).
+Example1: "How is Apple stock doing?" -> xxxx(your own response)+"Let me check Apple's stock performance for you._stock_AAPL_1d"
+Example2: "Show me Microsoft stock for the past week" -> xxxx(your own response)+"Here's Microsoft's stock performance over the past week._stock_MSFT_1d"
+
+8. For WEATHER-related questions (weather forecast, temperature, conditions):
+Response format: Add "._weather_LATITUDE_LONGITUDE" at the end
+Note: You must provide the precise latitude and longitude coordinates of the location the user is asking about.
+Example1: "What's the weather like in New York?" -> xxxx(your own response)+"Here's the weather forecast for New York._weather_40.7143_-74.006"
+Example2: "Will it rain tomorrow in London?" -> xxxx(your own response)+"Let me check the weather forecast for London._weather_51.5074_-0.1278"
+Example3: "How's the weather in Tokyo?" -> xxxx(your own response)+"Here's the current weather in Tokyo._weather_35.6762_139.6503"
 
 This is MANDATORY - you must use these EXACT formats for their respective types of questions. It the latest question is not related to these types of questions, you should not add any format.`,
         });

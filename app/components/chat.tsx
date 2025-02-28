@@ -1417,6 +1417,40 @@ function _Chat() {
                           sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
                         />
                       )}
+
+                    {message.role === "assistant" &&
+                      message.showStock &&
+                      message.stockData && (
+                        <iframe
+                          key={`stock-${message.id}`}
+                          srcDoc={message.stockData}
+                          style={{
+                            width: "100%",
+                            height: "400px",
+                            border: "none",
+                            borderRadius: "10px",
+                            marginTop: "10px",
+                          }}
+                          sandbox="allow-same-origin allow-scripts"
+                        />
+                      )}
+
+                    {message.role === "assistant" &&
+                      message.showWeather &&
+                      message.weatherData && (
+                        <iframe
+                          key={`weather-${message.id}`}
+                          srcDoc={message.weatherData}
+                          style={{
+                            width: "100%",
+                            height: "400px",
+                            border: "none",
+                            borderRadius: "10px",
+                            marginTop: "10px",
+                          }}
+                          sandbox="allow-same-origin allow-scripts"
+                        />
+                      )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>
                     {message.role === "assistant" && message.usage && (

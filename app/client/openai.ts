@@ -7,6 +7,8 @@ interface RequestMessage {
   showCalculator?: boolean;
   showFlight?: boolean;
   flightData?: string;
+  showWeather?: boolean;
+  weatherData?: string;
 }
 
 export class OpenAI_Api {
@@ -57,6 +59,14 @@ export class OpenAI_Api {
           if (processedResponse.showHotel) {
             (botMessage as any).showHotel = true;
             (botMessage as any).hotelData = processedResponse.hotelData;
+          }
+          if (processedResponse.showStock) {
+            (botMessage as any).showStock = true;
+            (botMessage as any).stockData = processedResponse.stockData;
+          }
+          if (processedResponse.showWeather) {
+            (botMessage as any).showWeather = true;
+            (botMessage as any).weatherData = processedResponse.weatherData;
           }
         }
       }
