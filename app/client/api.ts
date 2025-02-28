@@ -416,33 +416,491 @@ async function handleStockQuery(symbol: string, interval: string) {
   return finalHTML;
 }
 
-export async function processGPTResponse(response: string) {
-  // 检查是否是 hotel 响应 - 把 hotel 匹配放在最前面
-  const hotelMatch = response.match(
-    /(.+)\.\_hotel\_\_(\d{4}-\d{2}-\d{2})\_\_(\d{4}-\d{2}-\d{2})\_\_(.+)/,
-  );
-  if (hotelMatch) {
-    const [_, content, checkIn, checkOut, location] = hotelMatch;
-    const template = Locale.Store.Prompt.hotelHTML_template;
-    const hotelHtml = template
-      .replace(/CHECK_IN_DATE/g, checkIn)
-      .replace(/CHECK_OUT_DATE/g, checkOut)
-      .replace(/LOCATION/g, location.replace(/_/g, " "));
+/** ==========================
+ *  1. Fetch Weather Data
+ *  ==========================
+ */
+async function fetchWeatherData(latitude: string, longitude: string) {
+  try {
+    console.log(
+      `[WEATHER] Fetching data for location (${latitude}, ${longitude})`,
+    );
 
-    return {
-      content,
-      showHotel: true,
-      hotelData: hotelHtml,
-      showFlight: false,
-      flightData: "",
-      showMap: false,
-      mapdata: "",
-      showBank: false,
-      bankData: "",
-      showCalendar: false,
-      calendarData: "",
-      showCalculator: false,
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature`,
+    );
+    const weatherResponse = await response.json();
+    console.log(`[WEATHER] Raw API response:`, weatherResponse);
+
+    if (!weatherResponse.hourly || !weatherResponse.hourly.temperature) {
+      console.error(
+        "[WEATHER] Missing 'hourly.temperature' field in API response",
+      );
+      throw new Error("Weather API returned an invalid format");
+    }
+
+    // **解析 API 数据**
+    const times = weatherResponse.hourly.time; // 时间数组
+    const temperatures = weatherResponse.hourly.temperature; // 温度数组
+
+    const dailyTemps: Record<string, { high: number; low: number }> = {};
+
+    times.forEach((time: string, index: number) => {
+      const date = time.split("T")[0]; // 提取 YYYY-MM-DD
+      const temp = temperatures[index];
+
+      if (!dailyTemps[date]) {
+        dailyTemps[date] = { high: temp, low: temp };
+      } else {
+        dailyTemps[date].high = Math.max(dailyTemps[date].high, temp);
+        dailyTemps[date].low = Math.min(dailyTemps[date].low, temp);
+      }
+    });
+
+    // **整理数据**
+    const processedData = {
+      location: { latitude, longitude },
+      timezone: weatherResponse.timezone,
+      daily: Object.entries(dailyTemps).map(([date, { high, low }]) => ({
+        date,
+        high,
+        low,
+      })),
     };
+
+    console.log(`[WEATHER] Processed data:`, processedData);
+    return processedData;
+  } catch (error) {
+    console.error("[WEATHER] Error fetching weather data:", error);
+    return null;
+  }
+}
+
+/** ==========================
+ *  2. Generate HTML using LLM
+ *  ==========================
+ */
+async function generateWeatherChartHTML(
+  latitude: string,
+  longitude: string,
+  weatherData: any,
+) {
+  const prompt = `
+You are a meteorological data visualization expert. Generate an HTML page with a **weather temperature chart** using Chart.js.
+
+**Weather Data for location (${latitude}, ${longitude}):**
+${JSON.stringify(weatherData)}
+
+**Instructions:**
+1. Extract **time** (X-axis) and **temperature** (Y-axis) from weather data.
+2. Format the time in 24-hour format (e.g., 08:00, 12:00, 16:00, 20:00).
+3. Use **Chart.js** to render a **blue theme** temperature line chart with high and low temperatures.
+4. Add weather icons below the dates.
+5. Return **only the HTML code**, start with <!DOCTYPE html>, end with </html>.
+6. You should use the weather data to generate the chart, not the example data.
+7. Be careful with the given data structure, it is different from the example data, generate your own html code that match the givendata structure, not the template， note that you need to infer the city name from the latitude and longitude and include city name in the title instead of the latitude and longitude.
+8. Make your html code be responsive, and the layout should be good witho no overlapping in componenets, especially the date and the weather icon..
+9. Make sure your html code is correct and can be rendered directly in the browser.
+
+### **HTML Template:**
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Temperature Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+        }
+        .chart-container {
+            width: 95%;
+            max-width: 900px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            margin: 10px auto;
+        }
+        
+        h2 {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.6rem;
+        }
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 350px;
+        }
+        @media (max-width: 600px) {
+            .chart-container {
+                padding: 10px;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <h2>Weather Forecast for New York City 🌦️)</h2>
+        <canvas id="weatherChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        const labels = ["2025-02-28", "2025-03-01", "2025-03-02", "2025-03-03", "2025-03-04", "2025-03-05", "2025-03-06"];
+        const highTemps = [11.2, 10.3, 0, 2.8, 6.8, 11.6, 12.4];
+        const lowTemps = [2.5, 0.8, -6.3, -5.1, 0.1, 5.4, 4.8];
+
+        const weatherData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: "High Temp (°C)",
+                    data: highTemps,
+                    borderColor: "rgba(0, 191, 255, 1)",
+                    backgroundColor: "rgba(0, 191, 255, 0.2)",
+                    borderWidth: 2,
+                    pointBackgroundColor: "cyan",
+                    pointRadius: 5,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: "Low Temp (°C)",
+                    data: lowTemps,
+                    borderColor: "rgb(159, 214, 249)",
+                    borderWidth: 2,
+                    pointBackgroundColor: "lightblue",
+                    pointRadius: 5,
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
+        };
+
+        new Chart(ctx, {
+            type: "line",
+            data: weatherData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { color: 'white', font: { size: 12 }, padding:10}
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => \`\${context.dataset.label}: \${context.parsed.y}°C\`
+                            
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'white', font: { size: 12 } , maxRotation: 45, minRotation: 45 }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'white', font: { size: 12 }, callback: (value) => \`\${value}°C\` }
+                    }
+                },
+                layout: { padding: { top: 20, right: 20, left: 10, bottom: 50 } },
+                animation: { duration: 1000, easing: 'easeOutQuart' }
+            }
+        });
+    </script>
+</body>
+</html>
+\`\`\`
+`;
+
+  const llmResponse = await fetchOpenAI([{ role: "user", content: prompt }], {
+    model: "gpt-4o",
+    cache: "none" as CacheType, // 修改 "no-cache" 为 "none"
+  });
+
+  // 添加错误检查
+  if (llmResponse.choices[0].message.content.startsWith("```html")) {
+    llmResponse.choices[0].message.content =
+      llmResponse.choices[0].message.content
+        .replace(/^```html\s*/, "")
+        .replace(/```$/, "")
+        .trim();
+    console.log(
+      "[DEBUG] Cleaned HTML response:",
+      llmResponse.choices[0].message.content,
+    );
+  }
+  return llmResponse.choices[0].message.content;
+}
+
+/** ==========================
+ *  3. Handle Weather Query
+ *  ==========================
+ */
+async function handleWeatherQuery(latitude: string, longitude: string) {
+  console.log(`[WEATHER] Fetching API for (${latitude}, ${longitude})...`);
+
+  const weatherData = await fetchWeatherData(latitude, longitude);
+  if (!weatherData) {
+    console.error("[WEATHER] No weather data received");
+    throw new Error("No weather data available");
+  }
+
+  console.log(`[WEATHER] API response received, sending to LLM...`);
+  const finalHTML = await generateWeatherChartHTML(
+    latitude,
+    longitude,
+    weatherData,
+  );
+
+  if (!finalHTML) {
+    console.error("[WEATHER] No HTML generated");
+    throw new Error("Failed to generate weather chart");
+  }
+
+  console.log(`[WEATHER] Final HTML ready, length: ${finalHTML.length}`);
+  return finalHTML;
+}
+
+/** ==========================
+ *  4. Process Weather Response
+ *  ==========================
+ */
+let weatherHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Temperature Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+        }
+        .chart-container {
+            width: 95%;
+            max-width: 900px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            margin: 10px auto;
+        }
+        .weather-icon {
+            width: 30px;
+            height: 30px;
+            display: block;
+            margin: 5px auto;
+            text-align: center;
+        }
+        h2 {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.4rem;
+        }
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 300px;
+        }
+        @media (max-width: 600px) {
+            .chart-container {
+                padding: 10px;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <h2>Weather Forecast for New York</h2>
+        <canvas id="weatherChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const highTemps = [22, 24, 26, 28, 27, 25, 23];
+        const lowTemps = [14, 16, 18, 20, 19, 17, 15];
+        const weatherTypes = ["☀️", "🌤️", "⛅", "🌧️", "🌦️", "☁️", "⛈️"];
+
+        const weatherData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: "High Temp (°C)",
+                    data: highTemps,
+                    borderColor: "rgba(0, 191, 255, 1)",
+                    backgroundColor: "rgba(0, 191, 255, 0.2)",
+                    borderWidth: 2,
+                    pointBackgroundColor: "cyan",
+                    pointRadius: 5,
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: "Low Temp (°C)",
+                    data: lowTemps,
+                    borderColor: "rgba(135, 206, 250, 1)",
+                    borderWidth: 2,
+                    pointBackgroundColor: "lightblue",
+                    pointRadius: 5,
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
+        };
+
+        const weatherIcons = {
+            id: "weatherIcons",
+            afterDatasetsDraw(chart) {
+                const { ctx, scales: { x, y } } = chart;
+                ctx.save();
+                labels.forEach((label, i) => {
+                    const icon = weatherTypes[i];
+                    ctx.font = "20px Arial";
+                    const xPos = x.getPixelForValue(i) - 10;
+                    ctx.fillText(icon, xPos, y.bottom + 35); // 调整图标位置，使其位于日期下方
+                });
+                ctx.restore();
+            }
+        };
+
+        new Chart(ctx, {
+            type: "line",
+            data: weatherData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { color: 'white', font: { size: 12 } }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => \`\${context.dataset.label}: \${context.parsed.y}°C\`,
+                            title: (tooltipItems) => \`\${labels[tooltipItems[0].dataIndex]} \${weatherTypes[tooltipItems[0].dataIndex]}\`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'white', font: { size: 12 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'white', font: { size: 12 }, callback: (value) => \`\${value}°C\` }
+                    }
+                },
+                layout: { padding: { top: 20, right: 20, left: 10, bottom: 50 } },
+                animation: { duration: 1000, easing: 'easeOutQuart' }
+            },
+            plugins: [weatherIcons]
+        });
+    </script>
+</body>
+</html>
+`;
+
+export async function processGPTResponse(response: string) {
+  const weatherMatch = response.match(
+    /(.+)\.\_weather\_([+-]?\d+\.\d+)\_([+-]?\d+\.\d+)$/,
+  );
+  if (weatherMatch) {
+    const [_, content, latitude, longitude] = weatherMatch;
+
+    try {
+      const generatedWeatherHtml = await handleWeatherQuery(
+        latitude,
+        longitude,
+      );
+      if (generatedWeatherHtml) {
+        weatherHtml = generatedWeatherHtml;
+      }
+      // 添加日志检查最终的HTML内容
+      console.log("[WEATHER] Final response HTML length:", weatherHtml?.length);
+
+      return {
+        content: content.trim(),
+        showWeather: true,
+        weatherData: weatherHtml,
+        showStock: false,
+        stockData: "",
+        showFlight: false,
+        flightData: "",
+        showMap: false,
+        mapdata: "",
+        showBank: false,
+        bankData: "",
+        showCalendar: false,
+        calendarData: "",
+        showCalculator: false,
+        showHotel: false,
+        hotelData: "",
+      };
+    } catch (error) {
+      console.error("[WEATHER] Error in processGPTResponse:", error);
+      return {
+        content: content.trim(),
+        showWeather: false,
+        weatherData: "",
+        showStock: false,
+        stockData: "",
+        showFlight: false,
+        flightData: "",
+        showMap: false,
+        mapdata: "",
+        showBank: false,
+        bankData: "",
+        showCalendar: false,
+        calendarData: "",
+        showCalculator: false,
+        showHotel: false,
+        hotelData: "",
+      };
+    }
   }
 
   // 检查是否是 stock 响应
@@ -638,6 +1096,34 @@ export async function processGPTResponse(response: string) {
     };
   }
 
+  // 检查是否是 hotel 响应 - 把 hotel 匹配放在最前面
+  const hotelMatch = response.match(
+    /(.+)\.\_hotel\_\_(\d{4}-\d{2}-\d{2})\_\_(\d{4}-\d{2}-\d{2})\_\_(.+)/,
+  );
+  if (hotelMatch) {
+    const [_, content, checkIn, checkOut, location] = hotelMatch;
+    const template = Locale.Store.Prompt.hotelHTML_template;
+    const hotelHtml = template
+      .replace(/CHECK_IN_DATE/g, checkIn)
+      .replace(/CHECK_OUT_DATE/g, checkOut)
+      .replace(/LOCATION/g, location.replace(/_/g, " "));
+
+    return {
+      content,
+      showHotel: true,
+      hotelData: hotelHtml,
+      showFlight: false,
+      flightData: "",
+      showMap: false,
+      mapdata: "",
+      showBank: false,
+      bankData: "",
+      showCalendar: false,
+      calendarData: "",
+      showCalculator: false,
+    };
+  }
+
   // 检查是否是 flight 响应
   const flightMatch = response.match(
     /(.+)\.\_flight\_\_(.+)\_\_(.+)\_\_(\d{4}-\d{2}-\d{2})/,
@@ -779,200 +1265,6 @@ export async function processGPTResponse(response: string) {
       calculatorData: "",
       showFlight: false,
       flightData: "",
-      showHotel: false,
-      hotelData: "",
-    };
-  }
-
-  // 检查是否是 weather 响应
-  const weatherMatch = response.match(
-    /(.+)\.\_weather\_([+-]?\d+\.\d+)\_([+-]?\d+\.\d+)/,
-  );
-  if (weatherMatch) {
-    const [_, content, latitude, longitude] = weatherMatch;
-
-    // 根据经纬度获取位置名称
-    let locationName = `${latitude}, ${longitude}`;
-
-    const weatherHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Temperature Chart</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            width: 100%;
-        }
-        .chart-container {
-            width: 95%;
-            max-width: 900px;
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
-            margin: 10px auto;
-        }
-        .weather-icon {
-            width: 30px;
-            height: 30px;
-            display: block;
-            margin: 5px auto;
-            text-align: center;
-        }
-        h2 {
-            color: white;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 1.4rem;
-        }
-        .coordinates {
-            color: rgba(255, 255, 255, 0.7);
-            text-align: center;
-            font-size: 0.9rem;
-            margin-top: -10px;
-            margin-bottom: 15px;
-        }
-        canvas {
-            width: 100% !important;
-            height: auto !important;
-            max-height: 300px;
-        }
-        @media (max-width: 600px) {
-            .chart-container {
-                padding: 10px;
-            }
-            h2 {
-                font-size: 1.2rem;
-            }
-            .coordinates {
-                font-size: 0.8rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="chart-container">
-        <h2>Weather Forecast</h2>
-        <div class="coordinates">Coordinates: ${latitude}, ${longitude}</div>
-        <canvas id="weatherChart"></canvas>
-    </div>
-
-    <script>
-        const ctx = document.getElementById('weatherChart').getContext('2d');
-        const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-        const highTemps = [22, 24, 26, 28, 27, 25, 23];
-        const lowTemps = [14, 16, 18, 20, 19, 17, 15];
-        const weatherTypes = ["☀️", "🌤️", "⛅", "🌧️", "🌦️", "☁️", "⛈️"];
-
-        const weatherData = {
-            labels: labels,
-            datasets: [
-                {
-                    label: "High Temp (°C)",
-                    data: highTemps,
-                    borderColor: "rgba(0, 191, 255, 1)",
-                    backgroundColor: "rgba(0, 191, 255, 0.2)",
-                    borderWidth: 2,
-                    pointBackgroundColor: "cyan",
-                    pointRadius: 5,
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: "Low Temp (°C)",
-                    data: lowTemps,
-                    borderColor: "rgba(135, 206, 250, 1)",
-                    borderWidth: 2,
-                    pointBackgroundColor: "lightblue",
-                    pointRadius: 5,
-                    fill: false,
-                    tension: 0.4
-                }
-            ]
-        };
-
-        const weatherIcons = {
-            id: "weatherIcons",
-            afterDatasetsDraw(chart) {
-                const { ctx, scales: { x, y } } = chart;
-                ctx.save();
-                labels.forEach((label, i) => {
-                    const icon = weatherTypes[i];
-                    ctx.font = "20px Arial";
-                    const xPos = x.getPixelForValue(i) - 10;
-                    ctx.fillText(icon, xPos, y.bottom + 35); // 调整图标位置，使其位于日期下方
-                });
-                ctx.restore();
-            }
-        };
-
-        new Chart(ctx, {
-            type: "line",
-            data: weatherData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: { color: 'white', font: { size: 12 } }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: 'white',
-                        bodyColor: 'white',
-                        displayColors: false,
-                        callbacks: {
-                            label: (context) => \`\${context.dataset.label}: \${context.parsed.y}°C\`,
-                            title: (tooltipItems) => \`\${labels[tooltipItems[0].dataIndex]} \${weatherTypes[tooltipItems[0].dataIndex]}\`
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'white', font: { size: 12 } }
-                    },
-                    y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'white', font: { size: 12 }, callback: (value) => \`\${value}°C\` }
-                    }
-                },
-                layout: { padding: { top: 20, right: 20, left: 10, bottom: 50 } },
-                animation: { duration: 1000, easing: 'easeOutQuart' }
-            },
-            plugins: [weatherIcons]
-        });
-    </script>
-</body>
-</html>`;
-
-    return {
-      content,
-      showWeather: true,
-      weatherData: weatherHtml,
-      showStock: false,
-      stockData: "",
-      showFlight: false,
-      flightData: "",
-      showMap: false,
-      mapdata: "",
-      showBank: false,
-      bankData: "",
-      showCalendar: false,
-      calendarData: "",
-      showCalculator: false,
       showHotel: false,
       hotelData: "",
     };

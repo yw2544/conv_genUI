@@ -364,6 +364,7 @@ Note: You must provide the precise latitude and longitude coordinates of the loc
 Example1: "What's the weather like in New York?" -> xxxx(your own response)+"Here's the weather forecast for New York._weather_40.7143_-74.006"
 Example2: "Will it rain tomorrow in London?" -> xxxx(your own response)+"Let me check the weather forecast for London._weather_51.5074_-0.1278"
 Example3: "How's the weather in Tokyo?" -> xxxx(your own response)+"Here's the current weather in Tokyo._weather_35.6762_139.6503"
+Note that you should give exact three "_" in the end of the response, no change of line allowed.
 
 This is MANDATORY - you must use these EXACT formats for their respective types of questions. It the latest question is not related to these types of questions, you should not add any format.`,
         });
