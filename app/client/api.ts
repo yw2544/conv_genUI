@@ -144,6 +144,30 @@ async function fetchBankData() {
 }
 
 export async function processGPTResponse(response: string) {
+  console.log("[DEBUG] Processing GPT response:", response);
+
+  const processedResponse: any = {
+    content: response,
+  };
+
+  // 检查是否包含股票格式
+  const stockMatch = response.match(/(.*)\_stock\_([A-Z]+)\_([a-z0-9]+)$/);
+  console.log("[DEBUG] Stock match result:", stockMatch);
+
+  if (stockMatch) {
+    console.log("[STOCK] Detected stock pattern in response:", stockMatch);
+    const [fullMatch, content, stockSymbol, stockInterval] = stockMatch;
+    processedResponse.content = content.trim(); // 去除标记和多余空格
+    processedResponse.showStock = true;
+    processedResponse.stockSymbol = stockSymbol;
+    processedResponse.stockInterval = stockInterval;
+    console.log(
+      "[STOCK] Extracted stock info:",
+      processedResponse.stockSymbol,
+      processedResponse.stockInterval,
+    );
+  }
+
   // 检查是否是 hotel 响应 - 把 hotel 匹配放在最前面
   const hotelMatch = response.match(
     /(.+)\.\_hotel\_\_(\d{4}-\d{2}-\d{2})\_\_(\d{4}-\d{2}-\d{2})\_\_(.+)/,
@@ -156,20 +180,17 @@ export async function processGPTResponse(response: string) {
       .replace(/CHECK_OUT_DATE/g, checkOut)
       .replace(/LOCATION/g, location.replace(/_/g, " "));
 
-    return {
-      content,
-      showHotel: true,
-      hotelData: hotelHtml,
-      showFlight: false,
-      flightData: "",
-      showMap: false,
-      mapdata: "",
-      showBank: false,
-      bankData: "",
-      showCalendar: false,
-      calendarData: "",
-      showCalculator: false,
-    };
+    processedResponse.showHotel = true;
+    processedResponse.hotelData = hotelHtml;
+    processedResponse.showFlight = false;
+    processedResponse.flightData = "";
+    processedResponse.showMap = false;
+    processedResponse.mapdata = "";
+    processedResponse.showBank = false;
+    processedResponse.bankData = "";
+    processedResponse.showCalendar = false;
+    processedResponse.calendarData = "";
+    processedResponse.showCalculator = false;
   }
 
   // 检查是否是 flight 响应
@@ -184,20 +205,17 @@ export async function processGPTResponse(response: string) {
       .replace(/ARRIVAL_AIRPORT/g, arrivalAirport)
       .replace(/DEPARTURE_DATE/g, date);
 
-    return {
-      content,
-      showFlight: true,
-      flightData: flightHtml,
-      showMap: false,
-      mapdata: "",
-      showBank: false,
-      bankData: "",
-      showCalendar: false,
-      calendarData: "",
-      showCalculator: false,
-      showHotel: false,
-      hotelData: "",
-    };
+    processedResponse.showFlight = true;
+    processedResponse.flightData = flightHtml;
+    processedResponse.showMap = false;
+    processedResponse.mapdata = "";
+    processedResponse.showBank = false;
+    processedResponse.bankData = "";
+    processedResponse.showCalendar = false;
+    processedResponse.calendarData = "";
+    processedResponse.showCalculator = false;
+    processedResponse.showHotel = false;
+    processedResponse.hotelData = "";
   }
 
   const mapMatch = response.match(/(.+)\.\_map\_(.+)/);
@@ -213,20 +231,17 @@ export async function processGPTResponse(response: string) {
       JSON.stringify(locations),
     );
 
-    return {
-      content,
-      showMap: true,
-      mapdata: mapHtml,
-      showBank: false,
-      bankData: "",
-      showCalendar: false,
-      calendarData: "",
-      showCalculator: false,
-      showFlight: false,
-      flightData: "",
-      showHotel: false,
-      hotelData: "",
-    };
+    processedResponse.showMap = true;
+    processedResponse.mapdata = mapHtml;
+    processedResponse.showBank = false;
+    processedResponse.bankData = "";
+    processedResponse.showCalendar = false;
+    processedResponse.calendarData = "";
+    processedResponse.showCalculator = false;
+    processedResponse.showFlight = false;
+    processedResponse.flightData = "";
+    processedResponse.showHotel = false;
+    processedResponse.hotelData = "";
   }
 
   // 检查是否是银行响应
@@ -261,20 +276,17 @@ export async function processGPTResponse(response: string) {
 
     console.log("Final HTML:", bankHtml);
 
-    return {
-      content,
-      showBank: true,
-      bankData: bankHtml,
-      showMap: false,
-      mapdata: "",
-      showCalendar: false,
-      calendarData: "",
-      showCalculator: false,
-      showFlight: false,
-      flightData: "",
-      showHotel: false,
-      hotelData: "",
-    };
+    processedResponse.showBank = true;
+    processedResponse.bankData = bankHtml;
+    processedResponse.showMap = false;
+    processedResponse.mapdata = "";
+    processedResponse.showCalendar = false;
+    processedResponse.calendarData = "";
+    processedResponse.showCalculator = false;
+    processedResponse.showFlight = false;
+    processedResponse.flightData = "";
+    processedResponse.showHotel = false;
+    processedResponse.hotelData = "";
   }
 
   // 检查是否是日历响应
@@ -282,19 +294,18 @@ export async function processGPTResponse(response: string) {
   if (calendarMatch) {
     const [_, content, date] = calendarMatch;
     const template = Locale.Store.Prompt.calendarHTML_template;
-    return {
-      content,
-      showMap: false,
-      mapdata: "",
-      showCalendar: true,
-      showCalculator: false,
-      calendarData: template ? template.replace(/TARGET_DATE/g, date) : "",
-      calculatorData: "",
-      showFlight: false,
-      flightData: "",
-      showHotel: false,
-      hotelData: "",
-    };
+    processedResponse.showMap = false;
+    processedResponse.mapdata = "";
+    processedResponse.showCalendar = true;
+    processedResponse.showCalculator = false;
+    processedResponse.calendarData = template
+      ? template.replace(/TARGET_DATE/g, date)
+      : "";
+    processedResponse.calculatorData = "";
+    processedResponse.showFlight = false;
+    processedResponse.flightData = "";
+    processedResponse.showHotel = false;
+    processedResponse.hotelData = "";
   }
 
   // 检查是否是计算器响应
@@ -303,33 +314,183 @@ export async function processGPTResponse(response: string) {
 
   if (calculatorMatch) {
     const [_, content] = calculatorMatch;
-    return {
-      content,
-      showMap: false,
-      mapdata: "",
-      showCalendar: false,
-      showCalculator: true,
-      calendarData: "",
-      calculatorData: "",
-      showFlight: false,
-      flightData: "",
-      showHotel: false,
-      hotelData: "",
-    };
+    processedResponse.showMap = false;
+    processedResponse.mapdata = "";
+    processedResponse.showCalendar = false;
+    processedResponse.showCalculator = true;
+    processedResponse.calendarData = "";
+    processedResponse.calculatorData = "";
+    processedResponse.showFlight = false;
+    processedResponse.flightData = "";
+    processedResponse.showHotel = false;
+    processedResponse.hotelData = "";
   }
 
-  // 普通响应
-  return {
-    content: response,
-    showMap: false,
-    mapdata: "",
-    showCalendar: false,
-    showCalculator: false,
-    calendarData: "",
-    calculatorData: "",
-    showFlight: false,
-    flightData: "",
-    showHotel: false,
-    hotelData: "",
-  };
+  console.log("[DEBUG] Final processed response:", processedResponse);
+  return processedResponse;
+}
+
+// 添加股票数据获取函数
+export async function fetchStockData(symbol: string) {
+  try {
+    const response = await fetch(
+      `https://api.marketdata.app/v1/stocks/quotes/${symbol}`,
+      {
+        headers: {
+          "X-RapidAPI-Key":
+            "73832acacdmsh912a5ba144580abp1e7c32jsn8690baeaba73",
+          "X-RapidAPI-Host": "marketdata.app",
+        },
+      },
+    );
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching stock data:", error);
+    return { error: "Failed to fetch stock data" };
+  }
+}
+
+export class OpenAI_Api implements LLMApi {
+  async chat(options: ChatOptions): Promise<void> {
+    const { messages, config, onUpdate, onFinish, onError } = options;
+
+    try {
+      // 如果是流式响应
+      if (config.stream) {
+        const controller = new AbortController();
+        this.controller = controller;
+        const signal = controller.signal;
+
+        try {
+          const response = await fetch(
+            "https://xiaoai.plus/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer sk-GTubjBIrqUVOqm8D01KwgIdYzoov0gfUnSzXNVZ3E5P4y5p5`,
+              },
+              body: JSON.stringify({
+                model: config.model,
+                messages: messages,
+                temperature: config.temperature || 0.7,
+                stream: true,
+              }),
+              signal,
+            },
+          );
+
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            console.error("[API] OpenAI API error:", error);
+            throw new Error(`OpenAI API error: ${response.statusText}`);
+          }
+
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error("Failed to get response reader");
+          }
+
+          let responseText = "";
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              console.log("[API] Stream complete");
+              break;
+            }
+
+            const chunk = decoder.decode(value);
+            const lines = chunk
+              .split("\n")
+              .filter(
+                (line) => line.trim() !== "" && line.trim() !== "data: [DONE]",
+              );
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+
+              const data = line.slice(6);
+              if (data === "[DONE]") {
+                console.log("[API] Received [DONE] signal");
+                break;
+              }
+
+              try {
+                const json = JSON.parse(data);
+                const content = json.choices?.[0]?.delta?.content || "";
+                if (content) {
+                  responseText += content;
+                  onUpdate?.(responseText, content);
+                }
+              } catch (e) {
+                console.error("[API] Error parsing JSON:", e);
+              }
+            }
+          }
+
+          console.log(
+            "[API] Calling onFinish with response:",
+            responseText.substring(0, 100) + "...",
+          );
+          onFinish?.(responseText, "stop", undefined);
+        } catch (error) {
+          if (signal.aborted) {
+            console.log("[API] Request aborted");
+            return;
+          }
+          console.error("[API] Error in stream:", error);
+          onError?.(error as Error);
+        }
+      } else {
+        // 非流式响应
+        try {
+          const data = await fetchOpenAI(messages, config);
+          const reply =
+            data.choices?.[0]?.message?.content || "No response received";
+          onFinish?.(reply, data.choices?.[0]?.finish_reason, data.usage);
+        } catch (error) {
+          console.error("[API] Error in non-stream:", error);
+          onError?.(error as Error);
+        }
+      }
+    } catch (error) {
+      console.error("[API] Unexpected error:", error);
+      onError?.(error as Error);
+    }
+  }
+
+  async abort(): Promise<void> {
+    if (this.controller) {
+      this.controller.abort();
+      this.controller = undefined;
+    }
+  }
+
+  async models(): Promise<ModelRecord[] | Model[]> {
+    return [
+      {
+        name: "gpt-3.5-turbo",
+        display_name: "GPT-3.5",
+        provider: "OpenAI",
+        family: ModelFamily.OPENAI,
+      },
+      {
+        name: "gpt-4",
+        display_name: "GPT-4",
+        provider: "OpenAI",
+        family: ModelFamily.OPENAI,
+      },
+      {
+        name: "gpt-4o",
+        display_name: "GPT-4o",
+        provider: "OpenAI",
+        family: ModelFamily.OPENAI,
+      },
+    ];
+  }
+
+  private controller?: AbortController;
 }

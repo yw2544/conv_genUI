@@ -21,6 +21,7 @@ import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 import { ChatCompletionFinishReason, CompletionUsage } from "@mlc-ai/web-llm";
 import { ChatImage } from "../typing";
+import { OpenAI_Api } from "../client/openai";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -36,9 +37,15 @@ export type ChatMessage = RequestMessage & {
   bankData?: string;
   showFlight?: boolean;
   flightData?: string;
+  showHotel?: boolean;
+  hotelData?: string;
+  showStock?: boolean;
+  stockSymbol?: string;
+  stockData?: string;
   stopReason?: ChatCompletionFinishReason;
   model?: Model;
   usage?: CompletionUsage;
+  stockInterval?: string;
 };
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
@@ -304,7 +311,7 @@ export const useChatStore = createPersistStore(
         get().summarizeSession(llm);
       },
 
-      onUserInput(content: string, llm: LLMApi, attachImages?: ChatImage[]) {
+      onUserInput(content: string, llm: LLMApi) {
         const userMessage: ChatMessage = createMessage({
           role: "user",
           content:
@@ -347,6 +354,13 @@ Example1: "I want to book a hotel." -> xxxx(your own response)+"I'll help you se
 Example2: "Find me a hotel in NYC from April 20th to April 22nd." -> xxxx(your own response)+"I'll help you search for available hotels in New York City from April 20th to April 22nd._hotel__2025-04-20__2025-04-22__New_York_City"
 Note that it is 2025-2-21 now, so the checkin/out date should be later than 2025-02-18. **the default year is 2025**
 
+7. For STOCK-related questions (stock prices, market information):
+Response format: Add "._stock_SYMBOL_INTERVAL" at the end
+Note: Use official stock symbols (e.g., AAPL for Apple, MSFT for Microsoft)
+For interval, choose from: 5m, 15m, 30m, 1h, 1d, 1wk, 1mo, 3mo based on the user's question (default is 1d); the interval means we get one datapoint per interval. So we need to change the interval depending on the user's question: now(15m),very recently(1h), past week/default(1d), past year(1mo).
+Example1: "How is Apple stock doing?" -> xxxx(your own response)+"Let me check Apple's stock performance for you._stock_AAPL_1d"
+Example2: "Show me Microsoft stock for the past week" -> xxxx(your own response)+"Here's Microsoft's stock performance over the past week._stock_MSFT_1d"
+
 This is MANDATORY - you must use these EXACT formats for their respective types of questions. It the latest question is not related to these types of questions, you should not add any format.`,
         });
 
@@ -380,6 +394,8 @@ This is MANDATORY - you must use these EXACT formats for their respective types 
           async onFinish(message, stopReason, usage) {
             botMessage.streaming = false;
             const processedResponse = await processGPTResponse(message);
+            console.log("[DEBUG] message before Processed response:", message);
+            console.log("[DEBUG] Processed response:", processedResponse);
 
             // 更新 botMessage 的内容为处理后的响应
             botMessage.content = processedResponse.content;
@@ -398,6 +414,311 @@ This is MANDATORY - you must use these EXACT formats for their respective types 
             if (processedResponse.showFlight) {
               botMessage.showFlight = processedResponse.showFlight;
               botMessage.flightData = processedResponse.flightData;
+            }
+
+            // 处理股票功能
+            if (processedResponse.showStock) {
+              console.log(
+                "[STOCK] Stock pattern detected:",
+                processedResponse.stockSymbol,
+                processedResponse.stockInterval,
+              );
+              botMessage.showStock = true;
+              botMessage.stockSymbol = processedResponse.stockSymbol;
+              botMessage.stockInterval = processedResponse.stockInterval;
+
+              try {
+                console.log(
+                  "[STOCK] Fetching stock data from Yahoo Finance API...",
+                );
+                // 获取股票数据
+                const stockResponse = await fetch(
+                  `https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/history?symbol=${processedResponse.stockSymbol}&interval=${processedResponse.stockInterval}&diffandsplits=false`,
+                  {
+                    headers: {
+                      "x-rapidapi-host": "yahoo-finance15.p.rapidapi.com",
+                      "x-rapidapi-key":
+                        "73832acacdmsh912a5ba144580abp1e7c32jsn8690baeaba73",
+                    },
+                  },
+                );
+
+                const stockData = await stockResponse.json();
+                console.log(
+                  "[STOCK] Stock data received:",
+                  stockData ? "Success" : "Failed",
+                );
+
+                // 处理股票数据，只保留meta和前30个items
+                const processedStockData = {
+                  meta: stockData.meta,
+                  items: stockData.items ? stockData.items.slice(0, 30) : [],
+                };
+                console.log(
+                  "[STOCK] Processed stock data:",
+                  processedStockData.items.length,
+                  "items",
+                );
+
+                // 准备第二次 OpenAI 调用的消息
+                console.log("[STOCK] Preparing second OpenAI call...");
+                const stockPrompt = `
+You are a financial data visualization expert. I need you to create an HTML page with a stock price chart using Chart.js.
+
+Here is the stock data for ${processedResponse.stockSymbol} with interval ${processedResponse.stockInterval}:
+${JSON.stringify(processedStockData)}
+
+Please create an HTML page with the following requirements:
+1. Use the template below and fill in the appropriate data from the stock data provided
+2. Extract dates and closing prices from the items array
+3. Format the dates appropriately for display
+4. Make sure the chart is responsive and visually appealing
+5. Include the stock symbol and other relevant information in the title
+
+Here is the template to use:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a; /* 深色背景 */
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 900px;
+            background: #2a2a2a; /* 深色容器背景 */
+            padding: 40px; /* 增加padding，避免图例与表格重叠 */
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <h2>Stock Price Trend 📈</h2>
+        <canvas id="stockChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('stockChart').getContext('2d');
+
+        // 股票数据 (可替换为API数据)
+        const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const stockPrices = [150, 155, 160, 162, 158, 165, 170]; // 股票价格
+
+        // 创建绿色渐变填充
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "rgba(0, 255, 127, 0.7)"); // 深绿
+        gradient.addColorStop(1, "rgba(0, 255, 127, 0.2)"); // 透明绿色渐变
+
+        const stockData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Stock Price ($)",
+                    data: stockPrices,
+                    borderColor: "rgba(0, 255, 127, 1)",
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointBackgroundColor: "lime",
+                    pointRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        };
+
+        new Chart(ctx, {
+            type: "line",
+            data: stockData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true }
+                },
+                layout: {
+                    padding: {
+                        top: 50, // 增加上方间距
+                        bottom: 20
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: Math.min(...stockPrices) - 5,
+                        suggestedMax: Math.max(...stockPrices) + 5
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+Please replace the placeholder data with actual data from the provided stock information. Return ONLY the complete HTML code.`;
+
+                // 打印完整的 prompt
+                console.log("[STOCK] Second OpenAI prompt:", stockPrompt);
+
+                // 创建新的消息数组用于第二次调用
+                const messagesForStockHTML = [
+                  {
+                    role: "user" as const,
+                    content: stockPrompt,
+                  },
+                ];
+
+                // 第二次 OpenAI 调用
+                console.log("[STOCK] Making second OpenAI call...");
+                const openai = new OpenAI_Api();
+
+                // 先调用 onNewMessage 和更新会话状态，然后异步处理股票数据
+                get().onNewMessage(botMessage, llm);
+                get().updateCurrentSession((session) => {
+                  session.isGenerating = false;
+                });
+
+                // 异步处理股票数据
+                openai.chat({
+                  messages: messagesForStockHTML,
+                  config: {
+                    model: "gpt-4o",
+                    temperature: 0.7,
+                    cache: useAppConfig.getState().cacheType,
+                  },
+                  onFinish: (message) => {
+                    console.log(
+                      "[STOCK] Second OpenAI call completed with message length:",
+                      message.length,
+                    );
+                    console.log(
+                      "[STOCK] HTML content preview:",
+                      message.substring(0, 200) + "...",
+                    );
+
+                    // 更新 botMessage 和会话
+                    botMessage.stockData = message;
+                    console.log("[STOCK] Updated botMessage with stock HTML");
+
+                    get().updateCurrentSession((session) => {
+                      session.messages = session.messages.map((m) =>
+                        m.id === botMessage.id ? botMessage : m,
+                      );
+                    });
+                    console.log("[STOCK] Session updated with stock HTML");
+                  },
+                  onError: (error) => {
+                    console.error(
+                      "[STOCK] Error in second OpenAI call:",
+                      error,
+                    );
+
+                    // 设置错误 HTML
+                    botMessage.stockData = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .error-container {
+            width: 90%;
+            max-width: 600px;
+            background: #2a2a2a;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        h2 {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h2>Error Loading Stock Data</h2>
+        <p>Sorry, we couldn't load the stock data for ${processedResponse.stockSymbol}. Please try again later.</p>
+    </div>
+</body>
+</html>`;
+
+                    // 更新会话
+                    get().updateCurrentSession((session) => {
+                      session.messages = session.messages.map((m) =>
+                        m.id === botMessage.id ? botMessage : m,
+                      );
+                    });
+                  },
+                });
+
+                // 提前返回，避免下面的代码再次调用 onNewMessage
+                return;
+              } catch (error) {
+                console.error("[STOCK] Error processing stock data:", error);
+                botMessage.stockData = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .error-container {
+            width: 90%;
+            max-width: 600px;
+            background: #2a2a2a;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        h2 {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h2>Error Loading Stock Data</h2>
+        <p>Sorry, we couldn't load the stock data for ${processedResponse.stockSymbol}. Please try again later.</p>
+    </div>
+</body>
+</html>`;
+              }
             }
 
             get().onNewMessage(botMessage, llm);

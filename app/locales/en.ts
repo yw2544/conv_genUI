@@ -959,6 +959,144 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     </script>
 </body>
 </html>`,
+      stockHTML_template: `<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f8fafc;
+      color: #1a1f36;
+    }
+    .chart-container { 
+      width: 100%; 
+      max-width: 800px; 
+      margin: 0 auto;
+      background: white;
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .stock-info {
+      margin-bottom: 20px;
+      padding: 12px;
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    .stock-price {
+      font-size: 24px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .stock-change {
+      font-size: 16px;
+      margin-left: 10px;
+    }
+    .positive {
+      color: #10b981;
+    }
+    .negative {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="stock-info">
+    <h2>STOCK_SYMBOL Stock Price</h2>
+    <div>
+      <span class="stock-price">$STOCK_PRICE</span>
+      <span class="stock-change CHANGE_CLASS">STOCK_CHANGE (STOCK_CHANGE_PERCENT)</span>
+    </div>
+  </div>
+  <div class="chart-container">
+    <canvas id="stockChart"></canvas>
+  </div>
+  <script>
+    // 使用 sessionStorage 缓存
+    const CACHE_KEY = 'stockData_STOCK_SYMBOL';
+    
+    async function fetchStockData() {
+      // 检查缓存
+      const cachedData = sessionStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        renderChart(JSON.parse(cachedData));
+        return;
+      }
+      
+      try {
+        const response = await fetch('https://api.marketdata.app/v1/stocks/history/STOCK_SYMBOL?interval=1d&from=LAST_MONTH&to=TODAY', {
+          headers: {
+            'X-RapidAPI-Key': '73832acacdmsh912a5ba144580abp1e7c32jsn8690baeaba73',
+            'X-RapidAPI-Host': 'marketdata.app'
+          }
+        });
+        
+        const data = await response.json();
+        
+        // 存储到 sessionStorage
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        
+        renderChart(data);
+      } catch (error) {
+        console.error("Error fetching stock data:", error);
+        document.querySelector('.chart-container').innerHTML = "Failed to load stock data. Please try again later.";
+      }
+    }
+    
+    function renderChart(data) {
+      const ctx = document.getElementById('stockChart').getContext('2d');
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.date || [],
+          datasets: [{
+            label: 'STOCK_SYMBOL Price',
+            data: data.close || [],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'STOCK_SYMBOL Price History'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  return '$' + context.raw.toFixed(2);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: function(value) {
+                  return '$' + value;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // 页面加载时执行
+    fetchStockData();
+  </script>
+</body>
+</html>`,
     },
   },
   Copy: {

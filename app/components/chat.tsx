@@ -691,7 +691,7 @@ function _Chat() {
 
     if (isStreaming) return;
 
-    chatStore.onUserInput(userInput, llm, attachImages);
+    chatStore.onUserInput(userInput, llm);
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
     setUserInput("");
@@ -842,7 +842,7 @@ function _Chat() {
     // resend the message
     const textContent = getMessageTextContent(userMessage);
     const images = getMessageImages(userMessage);
-    chatStore.onUserInput(textContent, llm, images);
+    chatStore.onUserInput(textContent, llm);
     inputRef.current?.focus();
   };
 
@@ -1416,6 +1416,24 @@ function _Chat() {
                           }}
                           sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
                         />
+                      )}
+
+                    {message.role === "assistant" &&
+                      message.showStock &&
+                      message.stockData && (
+                        <div className={styles["stock-container"] || ""}>
+                          <iframe
+                            srcDoc={message.stockData}
+                            style={{
+                              width: "100%",
+                              height: "500px",
+                              border: "none",
+                              borderRadius: "10px",
+                              marginTop: "10px",
+                            }}
+                            sandbox="allow-scripts"
+                          />
+                        </div>
                       )}
                   </div>
                   <div className={styles["chat-message-action-date"]}>
