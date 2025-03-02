@@ -453,7 +453,6 @@ This is MANDATORY - you must use these EXACT formats for their respective types 
         const session = get().currentSession();
         const messages = session.messages.slice();
 
-        // 在发送给 LLM 的消息中添加计算器指令
         const messagesForLLM = messages.map((msg) => {
           if (msg.role === "user") {
             return {

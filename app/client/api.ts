@@ -65,10 +65,10 @@ export async function fetchOpenAI(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer sk-GTubjBIrqUVOqm8D01KwgIdYzoov0gfUnSzXNVZ3E5P4y5p5`, // ✅ 使用环境变量存储 API Key
+      Authorization: `Bearer sk-GTubjBIrqUVOqm8D01KwgIdYzoov0gfUnSzXNVZ3E5P4y5p5`, // 、使用环境变量存储 API Key
     },
     body: JSON.stringify({
-      model: config.model, // 选择 OpenAI 模型
+      model: config.model,
       messages: messages,
       temperature: config.temperature || 0.7,
       stream: false,
@@ -77,10 +77,10 @@ export async function fetchOpenAI(
 
   if (!response.ok) throw new Error(`OpenAI API error: ${response.statusText}`);
   const data = await response.json();
-  console.log("✅ API Response:", data);
+  console.log("API Response:", data);
   return data;
   // const reply = data.choices?.[0]?.message?.content || "No response received";
-  // console.log("✅ API Response:", reply);
+  // console.log("API Response:", reply);
   // return reply;
 }
 
@@ -175,7 +175,6 @@ async function fetchStockData(symbol: string, interval: string) {
       throw new Error("Stock API returned an invalid format");
     }
 
-    // 提取 `body` 数据，并转换为数组
     const stockItems = Object.values(stockResponse.body)
       .map((item: any) => ({
         date: item.date,
@@ -187,8 +186,8 @@ async function fetchStockData(symbol: string, interval: string) {
         volume: item.volume,
         adjclose: item.adjclose,
       }))
-      .sort((a, b) => a.date_utc - b.date_utc) // 按时间排序
-      .slice(-10); // 只取最近 10 条数据
+      .sort((a, b) => a.date_utc - b.date_utc)
+      .slice(-10);
 
     const processedData = {
       meta: stockResponse.meta,
@@ -281,7 +280,6 @@ ${JSON.stringify(stockdata)}
     </div>
 
     <script>
-        // 调整图表大小以适应容器
         function resizeChart() {
             const container = document.querySelector('.chart-container');
             const canvas = document.getElementById('stockChart');
@@ -295,11 +293,9 @@ ${JSON.stringify(stockdata)}
         
         const ctx = document.getElementById('stockChart').getContext('2d');
 
-        // 股票数据 (示例数据)
         const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const stockPrices = [150, 155, 160, 162, 158, 165, 170];
 
-        // 创建渐变填充
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, "rgba(0, 255, 127, 0.7)");
         gradient.addColorStop(1, "rgba(0, 255, 127, 0.1)");
@@ -376,7 +372,7 @@ ${JSON.stringify(stockdata)}
 
         new Chart(ctx, chartConfig);
         
-        // 初始调整大小
+        
         resizeChart();
     </script>
 </body>
@@ -439,14 +435,13 @@ async function fetchWeatherData(latitude: string, longitude: string) {
       throw new Error("Weather API returned an invalid format");
     }
 
-    // **解析 API 数据**
-    const times = weatherResponse.hourly.time; // 时间数组
-    const temperatures = weatherResponse.hourly.temperature; // 温度数组
+    const times = weatherResponse.hourly.time;
+    const temperatures = weatherResponse.hourly.temperature;
 
     const dailyTemps: Record<string, { high: number; low: number }> = {};
 
     times.forEach((time: string, index: number) => {
-      const date = time.split("T")[0]; // 提取 YYYY-MM-DD
+      const date = time.split("T")[0];
       const temp = temperatures[index];
 
       if (!dailyTemps[date]) {
@@ -457,7 +452,6 @@ async function fetchWeatherData(latitude: string, longitude: string) {
       }
     });
 
-    // **整理数据**
     const processedData = {
       location: { latitude, longitude },
       timezone: weatherResponse.timezone,
@@ -638,10 +632,9 @@ ${JSON.stringify(weatherData)}
 
   const llmResponse = await fetchOpenAI([{ role: "user", content: prompt }], {
     model: "gpt-4o",
-    cache: "none" as CacheType, // 修改 "no-cache" 为 "none"
+    cache: "none" as CacheType,
   });
 
-  // 添加错误检查
   if (llmResponse.choices[0].message.content.startsWith("```html")) {
     llmResponse.choices[0].message.content =
       llmResponse.choices[0].message.content
@@ -859,7 +852,6 @@ export async function processGPTResponse(response: string) {
       if (generatedWeatherHtml) {
         weatherHtml = generatedWeatherHtml;
       }
-      // 添加日志检查最终的HTML内容
       console.log("[WEATHER] Final response HTML length:", weatherHtml?.length);
 
       return {
@@ -903,12 +895,10 @@ export async function processGPTResponse(response: string) {
     }
   }
 
-  // 检查是否是 stock 响应
   const stockMatch = response.match(/(.+)\.\_stock\_([A-Z]+)\_([a-z0-9]+)/);
   if (stockMatch) {
     const [_, content, symbol, interval] = stockMatch;
 
-    // 使用默认模板作为备用
     let stockHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -966,7 +956,6 @@ export async function processGPTResponse(response: string) {
     </div>
 
     <script>
-        // 调整图表大小以适应容器
         function resizeChart() {
             const container = document.querySelector('.chart-container');
             const canvas = document.getElementById('stockChart');
@@ -980,11 +969,9 @@ export async function processGPTResponse(response: string) {
         
         const ctx = document.getElementById('stockChart').getContext('2d');
 
-        // 股票数据 (示例数据)
         const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const stockPrices = [150, 155, 160, 162, 158, 165, 170];
 
-        // 创建渐变填充
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, "rgba(0, 255, 127, 0.7)");
         gradient.addColorStop(1, "rgba(0, 255, 127, 0.1)");
@@ -1061,21 +1048,18 @@ export async function processGPTResponse(response: string) {
 
         new Chart(ctx, chartConfig);
         
-        // 初始调整大小
         resizeChart();
     </script>
 </body>
 </html>`;
 
     try {
-      // 尝试获取真实股票数据并生成HTML
       const generatedHtml = await handleStockQuery(symbol, interval);
       if (generatedHtml) {
         stockHtml = generatedHtml;
       }
     } catch (error) {
       console.error("Error generating stock chart:", error);
-      // 如果出错，使用默认模板
     }
 
     return {
@@ -1124,7 +1108,6 @@ export async function processGPTResponse(response: string) {
     };
   }
 
-  // 检查是否是 flight 响应
   const flightMatch = response.match(
     /(.+)\.\_flight\_\_(.+)\_\_(.+)\_\_(\d{4}-\d{2}-\d{2})/,
   );
@@ -1181,7 +1164,6 @@ export async function processGPTResponse(response: string) {
     };
   }
 
-  // 检查是否是银行响应
   const bankMatch = response.match(/(.+)\.\_bank/);
   if (bankMatch) {
     console.log("Bank match found");
@@ -1229,7 +1211,6 @@ export async function processGPTResponse(response: string) {
     };
   }
 
-  // 检查是否是日历响应
   const calendarMatch = response.match(/(.+)\.\_calendar\_(\d{4}-\d{2}-\d{2})/);
   if (calendarMatch) {
     const [_, content, date] = calendarMatch;
@@ -1249,9 +1230,8 @@ export async function processGPTResponse(response: string) {
     };
   }
 
-  // 检查是否是计算器响应
   const calculatorMatch = response.match(/(.+)\.\_calculator/);
-  console.log("Calculator match:", calculatorMatch); // 添加调试日志
+  console.log("Calculator match:", calculatorMatch);
 
   if (calculatorMatch) {
     const [_, content] = calculatorMatch;
@@ -1270,7 +1250,6 @@ export async function processGPTResponse(response: string) {
     };
   }
 
-  // 普通响应
   return {
     content: response,
     showMap: false,

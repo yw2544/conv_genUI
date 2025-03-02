@@ -675,11 +675,9 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     <script>
         const API_KEY = "73832acacdmsh912a5ba144580abp1e7c32jsn8690baeaba73";
         
-        // 添加缓存键
         const CACHE_KEY = 'flightSearchResults_DEPARTURE_AIRPORT_ARRIVAL_AIRPORT_DEPARTURE_DATE';
         
         async function fetchFlights() {
-            // 检查缓存
             const cachedData = sessionStorage.getItem(CACHE_KEY);
             if (cachedData) {
                 renderFlights(JSON.parse(cachedData));
@@ -697,7 +695,7 @@ Just ask your question naturally, and I'll provide the appropriate visualization
                 
                 const data = await response.json();
                 
-                // 存储到 sessionStorage
+                
                 if (data.data?.flightOffers) {
                     sessionStorage.setItem(CACHE_KEY, JSON.stringify(data.data.flightOffers));
                 }
@@ -778,7 +776,6 @@ Just ask your question naturally, and I'll provide the appropriate visualization
             });
         }
 
-        // 只在页面首次加载时执行一次
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', fetchFlights);
         } else {
@@ -908,7 +905,6 @@ Just ask your question naturally, and I'll provide the appropriate visualization
                     return;
                 }
 
-                // 存储到 sessionStorage
                 if (hotelData.data?.hotels) {
                     sessionStorage.setItem(CACHE_KEY, JSON.stringify(hotelData.data.hotels));
                 }
@@ -998,14 +994,12 @@ Just ask your question naturally, and I'll provide the appropriate visualization
     <script>
         const ctx = document.getElementById('stockChart').getContext('2d');
 
-        // 股票数据 (可替换为API数据)
         const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-        const stockPrices = [150, 155, 160, 162, 158, 165, 170]; // 股票价格
+        const stockPrices = [150, 155, 160, 162, 158, 165, 170]; 
 
-        // 创建绿色渐变填充
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, "rgba(0, 255, 127, 0.7)"); // 深绿
-        gradient.addColorStop(1, "rgba(0, 255, 127, 0.2)"); // 透明绿色渐变
+        gradient.addColorStop(0, "rgba(0, 255, 127, 0.7)"); 
+        gradient.addColorStop(1, "rgba(0, 255, 127, 0.2)"); 
 
         const stockData = {
             labels: labels,
@@ -1034,7 +1028,7 @@ Just ask your question naturally, and I'll provide the appropriate visualization
                 },
                 layout: {
                     padding: {
-                        top: 50, // 增加上方间距
+                        top: 50, 
                         bottom: 20
                     }
                 },
